@@ -1,6 +1,7 @@
 const noble = require('@abandonware/noble')
 
  const connected_devices = [] as any
+ const connected_macs = [] as any
 
 function delay(time: number) {
     return new Promise(resolve => setTimeout(resolve, time));
@@ -37,13 +38,18 @@ function delay(time: number) {
  */
  const connect = async function (id: string) {
     try {
+      if (connected_macs.includes(id)){
+        console.log("[binding-Bluetooth]",`Device ${id} already connected`, 'Bluetooth');
+        return connected_devices[connected_macs.indexOf(id)]
+      }
+      else{
         const device = await getDeviceById(id) as any;
-        //const thingsLog = getThingsLog();
         console.log("[binding-Bluetooth]",`Connecting to ${id}`, 'Bluetooth');
         await device.connectAsync();
         connected_devices.push(device)
+        connected_macs.push(id)
         return device
-        
+      }  
     } catch (error) {
         throw Error(`Error connecting to Bluetooth device ${id}`);
         console.error(error);

@@ -13,6 +13,7 @@ let td = undefined
 
 // Connect to device and Read TD
 blast_Bluetooth.get_td_from_device(MAC).then(async (td_uri) => {
+    // This needs atleast Node 18.0.0
     const res = await fetch(td_uri);
     td = await res.json(); 
 

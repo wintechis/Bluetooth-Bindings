@@ -4,7 +4,7 @@ import { BluetoothForm } from './Bluetooth.js';
 import { Subscription } from 'rxjs';
 import { Readable } from "stream";
 
-import { readNumber } from './blast_Bluetooth.js';
+import { readNumber, writeWithResponse, writeWithoutResponse } from './blast_Bluetooth.js';
 
 
 export default class BluetoothClient implements ProtocolClient {
@@ -139,6 +139,44 @@ export default class BluetoothClient implements ProtocolClient {
         operation: string,
         content: Content
       ) {
-        console.log("Write")
-      }
+        
+        //Convert readableStreamToString
+        const chunks = [];
+        for await (const chunk of content.body) {
+            chunks.push(chunk as Buffer);
+        }
+        const buffer = Buffer.concat(chunks);
+        const value = new TextDecoder().decode(buffer);
+
+        let property = '';
+
+        switch (operation) {
+            case 'writeWithResponse':
+              console.debug(
+                '[binding-webBluetooth]',
+                `invoking writeWithResponse with value ${value}`
+              );
+              await writeWithResponse(deviceId, serviceId, characteristicId, value);
+              break;
+            case 'writeWithoutResponse':
+              console.debug(
+                '[binding-webBluetooth]',
+                `invoking writeWithoutResponse with value ${value}`
+              );
+              await writeWithoutResponse(
+                deviceId,
+                serviceId,
+                characteristicId,
+                value
+              );
+              break;
+            default: {
+              throw new Error(
+                `[binding-webBluetooth] unknown operation ${operation}`
+              );
+            }
+          }
+
+        }
+
 }

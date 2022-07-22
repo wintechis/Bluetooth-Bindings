@@ -287,6 +287,7 @@ export const readNumber = async function (id: any, serviceUUID: any, characteris
         'Bluetooth',
         id
       );
+      console.log(value)
       await characteristic.writeAsync(value, false);
       console.log("[binding-Bluetooth]",
         'Finished WriteValueWithResponse on characteristic ' +
@@ -311,29 +312,24 @@ export const readNumber = async function (id: any, serviceUUID: any, characteris
 const hexStringToArrayBuffer = function (hexString: any) {
     // remove the leading 0x
     hexString = hexString.replace(/^0x/, '');
+    
+    // check for some non-hex characters
+    const bad = hexString.match(/[G-Z\s]/i);
+    if (bad) {
+      console.log('WARNING: found non-hex characters', bad, 'trying to correct');
+    }
+    
+    hexString = hexString.replace(/[^\w\s]/gi, '') // special char and white space
+    hexString = hexString.replace(/[G-Z\s]/i, '')
   
     // ensure even number of characters
     if (hexString.length % 2 !== 0) {
       hexString = '0' + hexString;
     }
-  
-    // check for some non-hex characters
-    const bad = hexString.match(/[G-Z\s]/i);
-    if (bad) {
-      console.log('WARNING: found non-hex characters', bad);
-    }
-  
-    // split the string into pairs of octets
-    const pairs = hexString.match(/[\dA-F]{2}/gi);
-  
-    // convert the octets to integers
-    const integers = pairs.map((s: any) => {
-      return parseInt(s, 16);
-    });
-  
-    const array = new Uint8Array(integers);
-  
-    return array.buffer;
+
+    hexString = Buffer.from(hexString, "hex")
+    
+    return hexString
   };
 
 

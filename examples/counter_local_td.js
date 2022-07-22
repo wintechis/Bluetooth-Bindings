@@ -103,9 +103,9 @@ const td = {
 try {
     servient.start().then(async (WoT) => {
         let thing = await WoT.consume(td)
-        const read1 = await thing.readProperty("counterValue");
-        console.log("'counterValue' Property has value:", await read1.value());
-        //await thing.writeProperty("incrementStepSize", "0x05")
+        //const read1 = await thing.readProperty("counterValue");
+        //console.log("'counterValue' Property has value:", await read1.value());
+        await thing.writeProperty("incrementStepSize", "05")
         //await thing.invokeAction("incrementCounter");
         await blast_Bluetooth.tearDown()
     });

@@ -342,5 +342,19 @@ export const tearDown = async function () {
         console.log("[binding-Bluetooth]","Disconnecting from Device:", element.address)
         await element.disconnectAsync();
       }
-
+    // Remove all items from connected_devices
+    connected_devices.length = 0
 }
+
+export const get_td_from_device = async function(MAC: string) {
+  const WoT_Service = "1fc8f811-0000-4e89-8476-e0b2dad3179b"
+  const td_Char = "2ab6"
+
+  let value = await read(MAC, WoT_Service, td_Char)
+
+  await tearDown()
+
+  return value.toString()
+  
+}
+

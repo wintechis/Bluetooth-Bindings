@@ -4,14 +4,34 @@ const { Servient, Helpers } = require("@node-wot/core");
 const Bluetooth_client_factory = require('.././dist/src/Bluetooth-client-factory');
 const blast_Bluetooth = require('.././dist/src/blast_Bluetooth')
 
+
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
 
-// Connect to device
+const MAC = "c0:3c:59:a8:91:06"
+let td = undefined
 
-// Read TD
-// Fetch TD
+// Connect to device and Read TD
+blast_Bluetooth.get_td_from_device(MAC).then(async (td_uri) => {
+    const res = await fetch(td_uri);
+    td = await res.json(); 
 
+    try {
+        servient.start().then(async (WoT) => {
+            let thing = await WoT.consume(td)
+            const read1 = await thing.readProperty("counterValue");
+            console.log("'counterValue' Property has value:", await read1.value());
+            //await thing.writeProperty("incrementStepSize", "0x05")
+            //await thing.invokeAction("incrementCounter");
+            await blast_Bluetooth.tearDown()
+        });
+    }
+    catch (err) {
+        console.error("Script error:", err);
+    }
+});
+
+/*
 const td = {
     "@context": [
         "https://www.w3.org/2019/wot/td/v1",
@@ -118,4 +138,4 @@ catch (err) {
     console.error("Script error:", err);
 }
     
-    
+*/  

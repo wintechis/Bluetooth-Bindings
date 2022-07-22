@@ -280,14 +280,12 @@ export const readNumber = async function (id: any, serviceUUID: any, characteris
     }
   
     try {
-      //const thingsLog = getThingsLog();
       console.log("[binding-Bluetooth]",
         'Invoke WriteValueWithResponse on characteristic ' +
           `${characteristicUUID} with value ${value.toString()}`,
         'Bluetooth',
         id
       );
-      console.log(value)
       await characteristic.writeAsync(value, false);
       console.log("[binding-Bluetooth]",
         'Finished WriteValueWithResponse on characteristic ' +

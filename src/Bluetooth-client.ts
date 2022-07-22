@@ -27,7 +27,7 @@ export default class BluetoothClient implements ProtocolClient {
         switch (operation) {
             case 'readNumber':
                 console.debug(
-                '[binding-webBluetooth]',
+                '[binding-Bluetooth]',
                 `invoking readNumber with serviceId ${serviceId} characteristicId ${characteristicId}`
                 );
                 value = (
@@ -36,7 +36,7 @@ export default class BluetoothClient implements ProtocolClient {
                 break;
             default: {
                 throw new Error(
-                    `[binding-webBluetooth] unknown return format ${operation}`
+                    `[binding-Bluetooth] unknown return format ${operation}`
                 );
             }
         }
@@ -56,8 +56,6 @@ export default class BluetoothClient implements ProtocolClient {
         form: BluetoothForm,
         content: Content
     ): Promise<void> {
-        console.log("writeRessource")
-
         const path = form.href.split('//')[1];
         const serviceId = path.split("/")[0];
         const characteristicId = path.split("/")[1];
@@ -78,8 +76,6 @@ export default class BluetoothClient implements ProtocolClient {
         form: BluetoothForm,
         content: Content
       ): Promise<Content> {
-        console.log("invokeResource")
-
         const path = form.href.split('//')[1];
         const serviceId = path.split("/")[0];
         const characteristicId = path.split("/")[1];
@@ -90,7 +86,7 @@ export default class BluetoothClient implements ProtocolClient {
         // might also be gatt://operation, i.e watchAdvertisements
         return this.writeResource(form, content).then(() => {
           let s = new Readable()
-          s.push("sadf")    // the string you want
+          s.push("")    // the string you want
           s.push(null)      // indicates end-of-file basically - the end of the stream
           const body = ProtocolHelpers.toNodeStream(s as Readable);
           return {
@@ -139,44 +135,43 @@ export default class BluetoothClient implements ProtocolClient {
         operation: string,
         content: Content
       ) {
-        
+        let value = ''
         //Convert readableStreamToString
-        const chunks = [];
-        for await (const chunk of content.body) {
-            chunks.push(chunk as Buffer);
-        }
-        const buffer = Buffer.concat(chunks);
-        const value = new TextDecoder().decode(buffer);
-
-        let property = '';
-
-        switch (operation) {
-            case 'writeWithResponse':
-              console.debug(
-                '[binding-webBluetooth]',
-                `invoking writeWithResponse with value ${value}`
-              );
-              await writeWithResponse(deviceId, serviceId, characteristicId, value);
-              break;
-            case 'writeWithoutResponse':
-              console.debug(
-                '[binding-webBluetooth]',
-                `invoking writeWithoutResponse with value ${value}`
-              );
-              await writeWithoutResponse(
-                deviceId,
-                serviceId,
-                characteristicId,
-                value
-              );
-              break;
-            default: {
-              throw new Error(
-                `[binding-webBluetooth] unknown operation ${operation}`
-              );
-            }
+        if (typeof content != "undefined"){
+          const chunks = [];
+          for await (const chunk of content.body) {
+              chunks.push(chunk as Buffer);
+          }
+          const buffer = Buffer.concat(chunks);
+          value = new TextDecoder().decode(buffer);
+  
           }
 
+          switch (operation) {
+              case 'writeWithResponse':
+                console.debug(
+                  '[binding-Bluetooth]',
+                  `invoking writeWithResponse with value ${value}`
+                );
+                await writeWithResponse(deviceId, serviceId, characteristicId, value);
+                break;
+              case 'writeWithoutResponse':
+                console.debug(
+                  '[binding-Bluetooth]',
+                  `invoking writeWithoutResponse with value ${value}`
+                );
+                await writeWithoutResponse(
+                  deviceId,
+                  serviceId,
+                  characteristicId,
+                  value
+                );
+                break;
+              default: {
+                throw new Error(
+                  `[binding-Bluetooth] unknown operation ${operation}`
+                );
+              }
+          }
         }
-
 }

@@ -1,13 +1,14 @@
 // client.js
 // Required steps to create a servient for a client
 const { Servient, Helpers } = require("@node-wot/core");
-const BLE = require('./dist/Bindings/binding-Bluetooth/Bluetooth-client-factory');
-const b = require('./dist/Bindings/binding-Bluetooth/blueT')
+const Bluetooth_client_factory = require('.././dist/src/Bluetooth-client-factory');
+const blast_Bluetooth = require('.././dist/src/blast_Bluetooth')
 
 const servient = new Servient();
-servient.addClientFactory(new BLE.default());
+servient.addClientFactory(new Bluetooth_client_factory.default());
 
 // Connect to device
+
 // Read TD
 // Fetch TD
 
@@ -107,10 +108,10 @@ try {
     servient.start().then(async (WoT) => {
         let thing = await WoT.consume(td)
         const read1 = await thing.readProperty("counterValue");
-        console.log("count value is", await read1.value());
+        console.log("'counterValue' Property has value:", await read1.value());
         //await thing.writeProperty("incrementStepSize", "0x05")
         //await thing.invokeAction("incrementCounter");
-        await b.tearDown()
+        await blast_Bluetooth.tearDown()
     });
 }
 catch (err) {

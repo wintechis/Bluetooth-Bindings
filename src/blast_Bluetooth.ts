@@ -195,7 +195,6 @@ export const readNumber = async function (id: any, serviceUUID: any, characteris
     let buffer = await read(id, serviceUUID, characteristicUUID);
     const length = buffer.length;
     const result = buffer.readUIntLE(0, length);
-    console.log(result)
   
     return result;
 };

@@ -27,7 +27,6 @@
         "allowJs": false
     },
     "include": [
-        "Bindings/**/*.ts",
-        "Bindings/**/*.js"
+        "src/*.ts"
     ]
 }

@@ -4,7 +4,7 @@ import { BluetoothForm } from './Bluetooth.js';
 import { Subscription } from 'rxjs';
 import { Readable } from "stream";
 
-import { readNumber, tearDown } from './blueT.js';
+import { readNumber } from './blast_Bluetooth.js';
 
 
 export default class BluetoothClient implements ProtocolClient {
@@ -40,7 +40,6 @@ export default class BluetoothClient implements ProtocolClient {
                 );
             }
         }
-        console.log("Got Value:", value)
         
         let s = new Readable()
         s.push(value)    // the string you want

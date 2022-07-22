@@ -14,6 +14,7 @@ export default class BluetoothClient implements ProtocolClient {
 
     public async readResource(form: BluetoothForm): Promise<Content> {
         const path = form.href.split('//')[1];
+        // c03c59a89106  -> c0:3c:59:a8:91:06 
         const deviceId = path.split("/")[0].replace(/(.{2})/g,"$1:").slice(0, -1);
         const serviceId = path.split("/")[1];
         const characteristicId = path.split("/")[2];

@@ -344,6 +344,7 @@ export const tearDown = async function () {
       }
     // Remove all items from connected_devices
     connected_devices.length = 0
+    connected_macs.length = 0
 }
 
 export const get_td_from_device = async function(MAC: string) {

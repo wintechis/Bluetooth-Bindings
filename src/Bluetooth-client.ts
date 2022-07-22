@@ -14,12 +14,13 @@ export default class BluetoothClient implements ProtocolClient {
 
     public async readResource(form: BluetoothForm): Promise<Content> {
         const path = form.href.split('//')[1];
-        const serviceId = path.split("/")[0];
-        const characteristicId = path.split("/")[1];
+        const deviceId = path.split("/")[0].replace(/(.{2})/g,"$1:").slice(0, -1);
+        const serviceId = path.split("/")[1];
+        const characteristicId = path.split("/")[2];
         const datatype = form.dataType
         //const operation = form.op
         const ble_operation = form["htv:methodName"]
-        const deviceId = "c0:3c:59:a8:91:06"
+        
 
         let operation = "readNumber"
 
@@ -57,31 +58,27 @@ export default class BluetoothClient implements ProtocolClient {
         content: Content
     ): Promise<void> {
         const path = form.href.split('//')[1];
-        const serviceId = path.split("/")[0];
-        const characteristicId = path.split("/")[1];
+        // c03c59a89106  -> c0:3c:59:a8:91:06 
+        const deviceId = path.split("/")[0].replace(/(.{2})/g,"$1:").slice(0, -1);
+        const serviceId = path.split("/")[1];
+        const characteristicId = path.split("/")[2];
         const datatype = form.dataType
         const operation = form.op
-        const ble_operation = form["htv:methodName"]
+        const ble_operation = form["htv:methodName"] as string
 
         return this.write(
-            "c0:3c:59:a8:91:06",
+            deviceId,
             serviceId,
             characteristicId,
-            "writeWithResponse",
+            ble_operation,
             content
           );
     }
     
-    public invokeResource(
+    public async invokeResource(
         form: BluetoothForm,
         content: Content
       ): Promise<Content> {
-        const path = form.href.split('//')[1];
-        const serviceId = path.split("/")[0];
-        const characteristicId = path.split("/")[1];
-        const datatype = form.dataType
-        const operation = form.op
-        const ble_operation = form["htv:methodName"]
         // TODO check if href is service/char/operation, then write,
         // might also be gatt://operation, i.e watchAdvertisements
         return this.writeResource(form, content).then(() => {
@@ -148,14 +145,14 @@ export default class BluetoothClient implements ProtocolClient {
           }
 
           switch (operation) {
-              case 'writeWithResponse':
+              case 'write':
                 console.debug(
                   '[binding-Bluetooth]',
                   `invoking writeWithResponse with value ${value}`
                 );
                 await writeWithResponse(deviceId, serviceId, characteristicId, value);
                 break;
-              case 'writeWithoutResponse':
+              case 'write-without-response':
                 console.debug(
                   '[binding-Bluetooth]',
                   `invoking writeWithoutResponse with value ${value}`

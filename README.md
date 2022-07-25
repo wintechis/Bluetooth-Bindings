@@ -7,7 +7,7 @@ Implementation of Bluetooth Bindings for use with Node-WoT and potentially BLAST
 - Implement your own application or try one of the examples
 
 ### Examples
-The examples need to be used with the GATT_Thing Repository.
+The examples need to be used with the GATT_Thing Repository. The Mac-Address in the td needs to be adjusted!
 
 #### counter_local_td.js
 The thing description is directly written in the application and not fetched from an external ressource. It reads the counter value, writes the property incrementStepSize to 6, invokes the action increment, and reads the value again.

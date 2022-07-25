@@ -4,7 +4,11 @@ import { BluetoothForm } from './Bluetooth.js';
 import { Subscription } from 'rxjs';
 import { Readable } from "stream";
 
-import { readNumber, writeWithResponse, writeWithoutResponse } from './blast_Bluetooth.js';
+import { readInt, readUInt, writeWithResponse, writeWithoutResponse } from './blast_Bluetooth.js';
+
+const handler_map: any = {"int8": "readInt", "int12": "readInt", "int16": "readInt", "int24": "readInt", "int32": "readInt", "int48": "readInt", "int64": "readInt", "int128": "readInt",
+                    "uint2": "readUInt", "uint4": "readUInt", "uint8": "readUInt", "uint12": "readUInt", "uint16": "readUInt", "uint24": "readUInt", "uint32": "readUInt", "uint48": "readUInt", "uint64": "readUInt", "uint128": "readUInt",
+                    "float32": "readFloat", "float64": "readFloat", "stringUTF8": "readUTF8", "stringUTF16": "readUTF16"}
 
 
 export default class BluetoothClient implements ProtocolClient {
@@ -18,22 +22,32 @@ export default class BluetoothClient implements ProtocolClient {
         const deviceId = path.split("/")[0].replace(/(.{2})/g,"$1:").slice(0, -1);
         const serviceId = path.split("/")[1];
         const characteristicId = path.split("/")[2];
-        const datatype = form.dataType
+        const expectedDataformat = form["bir:expectedDataformat"] as string
+        const receivedDataformat = form["bir:receivedDataformat"] as string
         //const operation = form.op
-        const ble_operation = form["htv:methodName"]
-        
+        const ble_operation = form["htvf:methodName"]
 
-        let operation = "readNumber"
+        // dataformat form td is mapped to correct operation
+        let operation = handler_map[receivedDataformat]
 
         let value = '';
         switch (operation) {
-            case 'readNumber':
+            case 'readInt':
                 console.debug(
                 '[binding-Bluetooth]',
-                `invoking readNumber with serviceId ${serviceId} characteristicId ${characteristicId}`
+                `invoking readInt with serviceId ${serviceId} characteristicId ${characteristicId}`
                 );
                 value = (
-                await readNumber(deviceId, serviceId, characteristicId)
+                await readInt(deviceId, serviceId, characteristicId)
+                ).toString();
+                break;
+            case 'readUInt':
+                console.debug(
+                '[binding-Bluetooth]',
+                `invoking readInt with serviceId ${serviceId} characteristicId ${characteristicId}`
+                );
+                value = (
+                await readUInt(deviceId, serviceId, characteristicId)
                 ).toString();
                 break;
             default: {

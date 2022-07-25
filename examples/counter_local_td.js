@@ -35,8 +35,9 @@ const td = {
             "readOnly": true,
             "forms": [
                 {
-                    "href": "gatt://c03c59a89106/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
-                    "dataType": "None",
+                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
+                    "bir:receivedDataformat": "int16",
+                    "bir:expectedDataformat": "None",
                     "op": [
                         "readproperty"
                     ],
@@ -52,8 +53,9 @@ const td = {
             "readOnly": false,
             "forms": [
                 {
-                    "href": "gatt://c03c59a89106/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
-                    "dataType": "uint8",
+                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
+                    "bir:receivedDataformat": "None",
+                    "bir:expectedDataformat": "None",
                     "op": [
                         "writeproperty"
                     ],
@@ -68,8 +70,9 @@ const td = {
         "incrementCounter": {
             "forms": [
                 {
-                    "href": "gatt://c03c59a89106/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
-                    "dataType": "None",
+                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
+                    "bir:receivedDataformat": "None",
+                    "bir:expectedDataformat": "None",
                     "op": [
                         "invokeaction"
                     ],
@@ -85,8 +88,9 @@ const td = {
         "valueChange": {
             "forms": [
                 {
-                    "href": "gatt://c03c59a89106/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
-                    "dataType": "None",
+                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
+                    "bir:receivedDataformat": "None",
+                    "bir:expectedDataformat": "None",
                     "op": [
                         "subscribeevent",
                         "unsubscribeevent"

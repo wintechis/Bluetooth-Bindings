@@ -197,12 +197,28 @@ export const read = async function (id: any, serviceUUID: any, characteristicUUI
  * @returns {string} the value of the characteristic.
  * @public
  */
-export const readNumber = async function (id: any, serviceUUID: any, characteristicUUID: any) {
+export const readInt = async function (id: any, serviceUUID: any, characteristicUUID: any) {
     let buffer = await read(id, serviceUUID, characteristicUUID);
     const length = buffer.length;
-    const result = buffer.readUIntLE(0, length);
+    const result = buffer.readIntLE(0, length);
   
     return result;
+};
+
+/**
+ * Reads a hexadecimal characteristic value from a Bluetooth device.
+ * @param {BluetoothDevice.id} id identifier of the device to read from.
+ * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
+ * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
+ * @returns {string} the value of the characteristic.
+ * @public
+ */
+ export const readUInt = async function (id: any, serviceUUID: any, characteristicUUID: any) {
+  let buffer = await read(id, serviceUUID, characteristicUUID);
+  const length = buffer.length;
+  const result = buffer.readUIntLE(0, length);
+
+  return result;
 };
 
 /**

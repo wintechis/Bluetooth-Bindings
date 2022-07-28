@@ -18,14 +18,33 @@ function delay(time: number) {
 export const getDeviceById = async function (id: string) {
   return new Promise(async function (resolve, reject) {
 
-    // get bluetooth adapter
-    const adapter = await bluetooth.defaultAdapter();
+    async function getDevice(){
+      // get bluetooth adapter
+      const adapter = await bluetooth.defaultAdapter();
 
-    await adapter.startDiscovery();
-    console.log("[binding-Bluetooth]", "Scanning started")
+      await adapter.startDiscovery();
+      console.log("[binding-Bluetooth]", "Scanning started")
 
-    const device = await adapter.waitDevice(id);
-    resolve(device);
+      const device = await adapter.waitDevice(id);
+      return device
+    }
+
+    // Promise Race
+    const promise1 = new Promise((resolve, reject) => {
+      resolve(getDevice());
+    });
+     
+    const promise2 = new Promise((resolve, reject) => {
+      setTimeout(resolve, 15000, undefined);
+    });
+     
+    Promise.race([promise1, promise2]).then((device) => {
+      if (typeof device === "undefined"){
+        throw Error(`Bluetooth device ${id} wasn't found.`)
+      }
+      resolve(device);
+    });  
+
   })
 };
 
@@ -51,30 +70,8 @@ const connect = async function (id: string) {
     }
   } catch (error) {
     throw Error(`Error connecting to Bluetooth device ${id}`);
-    console.error(error);
   }
 };
-
-
-async function get_service(peripheral: any, serviceUUID: string): Promise<any> {
-  let serviceUUIDwo = serviceUUID.toLowerCase();
-
-  const gattServer = await peripheral.gatt()
-  const services = await gattServer.services();
-
-  let service = undefined;
-  // Get service
-  services.forEach(async (serviceID: any) => {
-    if (serviceID == serviceUUIDwo) {
-      service = gattServer.getPrimaryService(serviceID);
-    }
-  });
-  if (service != undefined){
-    return service;
-  }
-
-  throw Error("Service not found!")
-}
 
 /**
  * Returns a promise to the primary BluetoothRemoteGATTService offered by
@@ -85,6 +82,8 @@ async function get_service(peripheral: any, serviceUUID: string): Promise<any> {
  */
 const getPrimaryService = async function (id: string, serviceUUID: string) {
   const device = await connect(id);
+  const gattServer = await device.gatt()
+
   let service;
   try {
     //const thingsLog = getThingsLog();
@@ -93,12 +92,13 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
       'Bluetooth',
       id
     );
-    service = await get_service(device, serviceUUID);
+    service = await gattServer.getPrimaryService(serviceUUID);
     console.log("[binding-Bluetooth]",
       `Got primary service ${serviceUUID}`,
       'Bluetooth',
       id
     );
+
   } catch (error) {
     console.error(error);
     throw new Error(`No Services Matching UUID ${serviceUUID} found in Device.`);

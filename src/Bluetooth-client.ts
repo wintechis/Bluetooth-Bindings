@@ -5,13 +5,17 @@ import { Subscription } from 'rxjs';
 import { Readable } from "stream";
 
 import { readInt, readUInt, writeWithResponse, writeWithoutResponse } from './blast_Bluetooth.js';
+import { getCharacteristic } from "./blast_Bluetooth_core.js"
 
 const handler_map: any = {"int8": "readInt", "int12": "readInt", "int16": "readInt", "int24": "readInt", "int32": "readInt", "int48": "readInt", "int64": "readInt", "int128": "readInt",
                     "uint2": "readUInt", "uint4": "readUInt", "uint8": "readUInt", "uint12": "readUInt", "uint16": "readUInt", "uint24": "readUInt", "uint32": "readUInt", "uint48": "readUInt", "uint64": "readUInt", "uint128": "readUInt",
                     "float32": "readFloat", "float64": "readFloat", "stringUTF8": "readUTF8", "stringUTF16": "readUTF16"}
 
-
 export default class BluetoothClient implements ProtocolClient {
+
+    // Stores active subscriptions in the format: deviceID, characteristicID
+    private activeSubscriptions:string []
+
     public toString(): string {
         return '[BluetoothClient]';
     }
@@ -156,7 +160,8 @@ export default class BluetoothClient implements ProtocolClient {
         const serviceId = path.split("/")[1];
         const characteristicId = path.split("/")[2];
         
-        //throw new Error ("LKSDJFÖ")
+        this.subscribeToCharacteristic(form,next,error,complete)
+
         return new Subscription(() => { });
     }
 
@@ -174,4 +179,67 @@ export default class BluetoothClient implements ProtocolClient {
     ): boolean {
         return false;
     }
+
+  private async subscribeToCharacteristic(
+      form: BluetoothForm,
+      next: (content: Content) => void,
+      error?: (error: Error) => void,
+      complete?: () => void
+    ): Promise<Subscription> {
+      const path = form.href.split('//')[1];
+      // c03c59a89106  -> c0:3c:59:a8:91:06 
+      const deviceId = path.split("/")[0].replace(/(.{2})/g,"$1:").slice(0, -1);
+      const serviceId = path.split("/")[1];
+      const characteristicId = path.split("/")[2];
+      const datatype = form.dataType
+      const operation = form.op
+      const ble_operation = form["htv:methodName"] as string
+  
+      /*
+      Hier ist notify
+      if (ble_operation !== 'subscribe') {
+        throw new Error(
+          `[binding-webBluetooth] operation ${ble_operation} is not supported`
+        );
+      }
+      */
+      console.debug(
+        '[binding-webBluetooth]',
+        `subscribing to characteristic with serviceId ${serviceId} characteristicId ${characteristicId}`
+      );
+      
+      const characteristic = await getCharacteristic(deviceId, serviceId, characteristicId);
+      await characteristic.startNotifications();
+
+      this.activeSubscriptions.push(characteristicId)
+
+      await new Promise<void>(done => {
+        characteristic.on('valuechanged', (buffer: any) => {
+            console.log('subscription', buffer)
+            console.log('read', buffer, buffer.toString());
+            const array = new Uint8Array(buffer);
+            // Convert value a DataView to ReadableStream
+            let s = new Readable()
+            s.push(array)    // the string you want
+            s.push(null)      // indicates end-of-file basically - the end of the stream
+            const body = ProtocolHelpers.toNodeStream(s as Readable);
+            const content = {
+              type: form.contentType || 'text/plain',
+              body: body,
+            };
+            next(content);
+            done()
+        })
+    })
+
+     return new Subscription(() => {
+        this.unsubscribe(characteristic)
+      }); 
+    }
+
+    private async unsubscribe(characteristic:any){
+      await characteristic.stopNotifications();
+    }
 }
+
+

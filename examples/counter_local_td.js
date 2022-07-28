@@ -4,6 +4,9 @@ const { Servient, Helpers } = require("@node-wot/core");
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
 const blast_Bluetooth_core = require('../dist/src/blast_Bluetooth_core')
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
@@ -93,7 +96,6 @@ const td = {
                     "bir:expectedDataformat": "None",
                     "op": [
                         "subscribeevent",
-                        "unsubscribeevent"
                     ],
                     "htv:methodName": "notify"
                 }
@@ -108,13 +110,18 @@ try {
     servient.start().then(async (WoT) => {
         let thing = await WoT.consume(td)
 
-        /*
+        
         thing.subscribeEvent("valueChange", async (data) => {
             // Here we are simply logging the message when the event is emitted
             // But, of course, could have a much more sophisticated handler
-            log("outOfResource event:", await data.value());
-        });*/
-        
+            console.log("outOfResource event:", await data.value());
+        });
+
+        await sleep(10000)
+        await thing.invokeAction("incrementCounter");
+
+        thing.subscribeEvent("valueChange")
+        /*
         const read1 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read1.value());
         await thing.writeProperty("incrementStepSize", "06")
@@ -122,7 +129,7 @@ try {
         const read2 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read2.value());
         await blast_Bluetooth_core.tearDown()
-        
+        */
     });
 }
 catch (err) {

@@ -191,47 +191,47 @@ value: any
 };
 
 
+/**
+ * Subscription functionality
+ */
 
-/*
-const subscribeToCharacteristic =  async function(
-    form: WebBluetoothForm,
-    next: (content: Content) => void,
-    error?: (error: Error) => void,
-    complete?: () => void
-  ): Promise<Subscription> {
-    const path = form.href.split('//')[1];
-    const deviceId = form['wbt:id'];
-    const deconstructedPath = this.deconstructPath(path);
-    const {serviceId, characteristicId, operation} = deconstructedPath;
 
-    if (operation !== 'subscribe') {
-      throw new Error(
-        `[binding-webBluetooth] operation ${operation} is not supported`
-      );
-    }
 
-    console.debug(
-      '[binding-webBluetooth]',
-      `subscribing to characteristic with serviceId ${serviceId} characteristicId ${characteristicId}`
+/**
+ * Subscribes to a Bluetooth characteristic and adds an event listener.
+ * @param {BluetoothDevice.id} id identifier of the device to read from.
+ * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
+ * @param {BluetoothCharacteristicUUID} charUUID identifier of the characteristic.
+ * @param {Function} handler handler to register for notifications.
+ */
+ export const subscribe = async function (id:string, serviceUUID:string, charUUID:string, handler:any) {
+    const characteristic = await getCharacteristic(id, serviceUUID, charUUID);
+    console.log(
+      `Add 'characteristicvaluechanged' listener to characteristic ${charUUID}` +
+        ` of service <code>${serviceUUID}</code>`,
+      'Bluetooth',
+      id
     );
+    try {
+        console.log(
+        `Invoke <code>startNotifications</code> on characteristic ${charUUID}` +
+          ` from service <code>${serviceUUID}</code>`,
+        'Bluetooth',
+        id
+      );
+      await characteristic.startNotifications();
+      console.log(
+        `Finished <code>startNotifications</code> on characteristic ${charUUID}` +
+          ` from service <code>${serviceUUID}</code>`,
+        'Bluetooth',
+        id
+      );
+    } catch (error) {
+      console.error(error);
+      console.log(`Error subscribing to Bluetooth device ${id}`);
+    }
+  };
 
-    const handler = (event: Event) => {
-      const value = (event.target as any).value as DataView;
-      const array = new Uint8Array(value.buffer);
-      // Convert value a DataView to ReadableStream
-      const content = {
-        type: form.contentType || 'text/plain',
-        body: convertToNodeReadable(array),
-      };
-      next(content);
-    };
-
-    await subscribe(deviceId, serviceId, characteristicId, handler);
-
-    return new Subscription(() => {
-      unsubscribe(deviceId, serviceId, characteristicId, handler);
-    });
-  }
 
 /**
  * Reads a Thing Description from a Bluetooth device.

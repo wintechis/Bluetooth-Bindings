@@ -120,7 +120,6 @@ try {
         await sleep(10000)
         await thing.invokeAction("incrementCounter");
 
-        thing.subscribeEvent("valueChange")
         /*
         const read1 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read1.value());

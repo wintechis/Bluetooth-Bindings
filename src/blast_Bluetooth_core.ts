@@ -22,7 +22,9 @@ export const getDeviceById = async function (id: string) {
       // get bluetooth adapter
       const adapter = await bluetooth.defaultAdapter();
 
-      await adapter.startDiscovery();
+      if (! await adapter.isDiscovering()){
+        await adapter.startDiscovery();
+      }
       console.log("[binding-Bluetooth]", "Scanning started")
 
       const device = await adapter.waitDevice(id);
@@ -175,6 +177,10 @@ export const hexStringToArrayBuffer = function (hexString: any) {
   return hexString
 };
 
+export const closeBluetooth = async function(){
+  await tearDown()
+  destroy()
+}
 
 export const tearDown = async function () {
   for (const element of connected_devices) {

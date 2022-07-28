@@ -26,12 +26,6 @@ export const getDeviceById = async function (id: string) {
 
     const device = await adapter.waitDevice(id);
     resolve(device);
-
-    // Wait 15 seconds if not requested device not found raise error
-    // Does it make sense? Shouldnt it be a Race
-    await delay(15000)
-    throw Error(`Bluetooth device ${id} wasn't found.`)
-
   })
 };
 
@@ -204,38 +198,6 @@ export const read = async function (id: string, serviceUUID: string, characteris
 };
 
 /**
- * Reads a hexadecimal characteristic value from a Bluetooth device.
- * @param {BluetoothDevice.id} id identifier of the device to read from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @returns {string} the value of the characteristic.
- * @public
- */
-export const readInt = async function (id: string, serviceUUID: string, characteristicUUID: string) {
-  let buffer = await read(id, serviceUUID, characteristicUUID);
-  const length = buffer.length;
-  const result = buffer.readIntLE(0, length);
-
-  return result;
-};
-
-/**
- * Reads a hexadecimal characteristic value from a Bluetooth device.
- * @param {BluetoothDevice.id} id identifier of the device to read from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @returns {string} the value of the characteristic.
- * @public
- */
-export const readUInt = async function (id: string, serviceUUID: string, characteristicUUID: string) {
-  let buffer = await read(id, serviceUUID, characteristicUUID);
-  const length = buffer.length;
-  const result = buffer.readUIntLE(0, length);
-
-  return result;
-};
-
-/**
  * Writes data to Bluetooth device using the gatt protocol.
  * @param {BluetoothDevice.id} id identifier of the device to write to.
  * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
@@ -369,7 +331,7 @@ const hexStringToArrayBuffer = function (hexString: any) {
 
 export const tearDown = async function () {
   for (const element of connected_devices) {
-    console.log("[binding-Bluetooth]", "Disconnecting from Device:", element)
+    console.log("[binding-Bluetooth]", "Disconnecting from Device:", element.device)
     await element.disconnect();
   }
   // Remove all items from connected_devices
@@ -389,3 +351,40 @@ export const get_td_from_device = async function (MAC: string) {
 
 }
 
+
+
+/** 
+* Should be in sperate file 
+**/
+
+/**
+ * Reads a hexadecimal characteristic value from a Bluetooth device.
+ * @param {BluetoothDevice.id} id identifier of the device to read from.
+ * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
+ * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
+ * @returns {string} the value of the characteristic.
+ * @public
+ */
+ export const readInt = async function (id: string, serviceUUID: string, characteristicUUID: string) {
+  let buffer = await read(id, serviceUUID, characteristicUUID);
+  const length = buffer.length;
+  const result = buffer.readIntLE(0, length);
+
+  return result;
+};
+
+/**
+ * Reads a hexadecimal characteristic value from a Bluetooth device.
+ * @param {BluetoothDevice.id} id identifier of the device to read from.
+ * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
+ * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
+ * @returns {string} the value of the characteristic.
+ * @public
+ */
+export const readUInt = async function (id: string, serviceUUID: string, characteristicUUID: string) {
+  let buffer = await read(id, serviceUUID, characteristicUUID);
+  const length = buffer.length;
+  const result = buffer.readUIntLE(0, length);
+
+  return result;
+};

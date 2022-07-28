@@ -1,3 +1,7 @@
+/**
+ * Handle basic bluetooth communication and discovery.
+ */
+
 const { createBluetooth } = require('node-ble');
 
 const { bluetooth, destroy } = createBluetooth();

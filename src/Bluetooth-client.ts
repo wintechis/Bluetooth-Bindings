@@ -11,10 +11,12 @@ const handler_map: any = {"int8": "readInt", "int12": "readInt", "int16": "readI
                     "uint2": "readUInt", "uint4": "readUInt", "uint8": "readUInt", "uint12": "readUInt", "uint16": "readUInt", "uint24": "readUInt", "uint32": "readUInt", "uint48": "readUInt", "uint64": "readUInt", "uint128": "readUInt",
                     "float32": "readFloat", "float64": "readFloat", "stringUTF8": "readUTF8", "stringUTF16": "readUTF16"}
 
-export default class BluetoothClient implements ProtocolClient {
+const template_map: any = {"int8": "number", "int12": "number", "int16": "number", "int24": "number", "int32": "number", "int48": "number", "int64": "number", "int128": "number",
+"uint2": "number", "uint4": "number", "uint8": "number", "uint12": "number", "uint16": "number", "uint24": "number", "uint32": "number", "uint48": "number", "uint64": "readUInt", "uint128": "readUInt",
+"float32": "readFloat", "float64": "readFloat", "stringUTF8": "readUTF8", "stringUTF16": "readUTF16"}
 
-    // Stores active subscriptions in the format: deviceID, characteristicID
-    private activeSubscriptions:string []
+
+export default class BluetoothClient implements ProtocolClient {
 
     public toString(): string {
         return '[BluetoothClient]';
@@ -83,8 +85,21 @@ export default class BluetoothClient implements ProtocolClient {
         const characteristicId = path.split("/")[2];
         const datatype = form.dataType
         const operation = form.op
-        const ble_operation = form["htv:methodName"] as string
+        let ble_operation: any
+        try{
+          ble_operation = form["htv:methodName"]
+        }
+        catch{
+          throw Error("'htv:mehtodName' not provided in td")
+        }
+        
+        let expectedData: any = undefined
+        try{
+          expectedData = form["bir:expectedData"]
+        }
+        catch{
 
+        }
 
         let value = ''
         //Convert readableStreamToString
@@ -97,7 +112,12 @@ export default class BluetoothClient implements ProtocolClient {
           value = new TextDecoder().decode(buffer);
   
           }
-          console.log("OPERATION", ble_operation)
+          
+          // If expectedData is provided in td, use it
+          if (typeof expectedData != "undefined"){
+            value = this.fill_in_form(expectedData, value)
+          }
+          
           switch (ble_operation) {
               case 'write':
                 console.debug(
@@ -195,14 +215,12 @@ export default class BluetoothClient implements ProtocolClient {
       const operation = form.op
       const ble_operation = form["htv:methodName"] as string
   
-      /*
-      Hier ist notify
-      if (ble_operation !== 'subscribe') {
+
+      if (ble_operation !== 'notify') {
         throw new Error(
           `[binding-webBluetooth] operation ${ble_operation} is not supported`
         );
       }
-      */
       console.debug(
         '[binding-webBluetooth]',
         `subscribing to characteristic with serviceId ${serviceId} characteristicId ${characteristicId}`
@@ -211,12 +229,10 @@ export default class BluetoothClient implements ProtocolClient {
       const characteristic = await getCharacteristic(deviceId, serviceId, characteristicId);
       await characteristic.startNotifications();
 
-      this.activeSubscriptions.push(characteristicId)
-
       await new Promise<void>(done => {
         characteristic.on('valuechanged', (buffer: any) => {
-            console.log('subscription', buffer)
-            console.log('read', buffer, buffer.toString());
+            //console.log('subscription', buffer)
+            //console.log('read', buffer, buffer.toString());
             const array = new Uint8Array(buffer);
             // Convert value a DataView to ReadableStream
             let s = new Readable()
@@ -240,6 +256,36 @@ export default class BluetoothClient implements ProtocolClient {
     private async unsubscribe(characteristic:any){
       await characteristic.stopNotifications();
     }
+
+    private fill_in_form(expectedData:any, value:any){
+      value = value.replace("\"", "")
+      value = value.split(",")
+
+    let string_template = expectedData[0]["bir:hasForm"]
+    const parameter = expectedData[0]["bir:hasParameter"]
+    
+    
+    for (let index = 0; index < parameter.length; ++index) {
+        // Get datatype
+        let dataType = parameter[index].split(":")[1].trim()
+        // Get number value
+        let placeholder = value[index].split(":")[0].trim()
+        let placeholder_value = value[index].split(":")[1].trim()
+
+        // Parse String
+        if (template_map[dataType] == "number"){
+            placeholder_value = parseInt(placeholder_value)
+        }
+    
+        // check length
+        let hex_string = placeholder_value.toString(16)
+        if (hex_string.length == 1){
+            hex_string = "0" + hex_string
+        }
+        string_template = string_template.replace("{"+placeholder+"}", hex_string);
+    }
+    return string_template
+}
 }
 
 

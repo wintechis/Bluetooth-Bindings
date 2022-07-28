@@ -114,13 +114,13 @@ try {
         thing.subscribeEvent("valueChange", async (data) => {
             // Here we are simply logging the message when the event is emitted
             // But, of course, could have a much more sophisticated handler
-            console.log("outOfResource event:", await data.value());
+            console.log("CounterChange event Occured!!:", await data.value());
         });
 
         await sleep(10000)
         await thing.invokeAction("incrementCounter");
 
-        /*
+        
         const read1 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read1.value());
         await thing.writeProperty("incrementStepSize", "06")
@@ -128,7 +128,9 @@ try {
         const read2 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read2.value());
         await blast_Bluetooth_core.tearDown()
-        */
+        
+
+        await blast_Bluetooth_core.closeBluetooth()
     });
 }
 catch (err) {

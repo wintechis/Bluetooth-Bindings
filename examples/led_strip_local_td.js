@@ -39,8 +39,13 @@ const td = {
             "forms": [
                 {
                     "href": "gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb",
-                    "bir:receivedDataformat": "int16",
-                    "bir:expectedDataformat": "None",
+                    "bir:receivedDataformat": "None",
+                    "bir:expectedData": [
+                        {
+                            "bir:hasForm": "7e000503{R}{G}{B}00ef",
+                            "bir:hasParameter": ["R: uint8", "G: uint8", "B: uint8"]
+                    }
+                ],
                     "op": [
                         "writeproperty"
                     ],
@@ -58,13 +63,14 @@ try {
     servient.start().then(async (WoT) => {
         let thing = await WoT.consume(td)
 
-        await thing.writeProperty("colour", '7e000503' + 'ff0000' + '00ef')
+        await thing.writeProperty("colour", 'R: 255, G: 0, B: 0')
         await sleep(5000)
-        await thing.writeProperty("colour", '7e000503' + '00ff00' + '00ef')
+        await thing.writeProperty("colour", 'R: 0, G: 255, B: 0')
         await sleep(5000)
-        await thing.writeProperty("colour", '7e000503' + '0000ff' + '00ef')
-        await sleep(5000)
-        await thing.writeProperty("colour", '7e000503' + '00ff00' + '00ef')
+        await thing.writeProperty("colour", 'R: 0, G: 0, B: 255')
+
+
+
 
         await blast_Bluetooth_core.closeBluetooth()
         

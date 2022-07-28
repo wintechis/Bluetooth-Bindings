@@ -15,7 +15,7 @@ function delay(time: number) {
  * @param {BluetoothDevice.id} id identifier of the device to get.
  * @returns {BluetoothDevice} the bluetooth device with id.
  */
-export const getDeviceById = async function (id: any) {
+export const getDeviceById = async function (id: string) {
   return new Promise(async function (resolve, reject) {
 
     // get bluetooth adapter
@@ -42,6 +42,7 @@ export const getDeviceById = async function (id: any) {
  */
 const connect = async function (id: string) {
   try {
+    // Check maybe earlier?
     if (connected_macs.includes(id)) {
       console.log("[binding-Bluetooth]", `Device ${id} already connected`, 'Bluetooth');
       return connected_devices[connected_macs.indexOf(id)]
@@ -88,7 +89,7 @@ async function get_service(peripheral: any, serviceUUID: string): Promise<any> {
  * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
  * @returns {Promise<BluetoothRemoteGATT>} A BluetoothRemoteGATTService object.
  */
-const getPrimaryService = async function (id: any, serviceUUID: any) {
+const getPrimaryService = async function (id: string, serviceUUID: string) {
   const device = await connect(id);
   let service;
   try {
@@ -112,7 +113,7 @@ const getPrimaryService = async function (id: any, serviceUUID: any) {
 };
 
 
-async function get_char(service: any, characteristicUUID: String) : Promise<any> {
+async function get_char(service: any, characteristicUUID: string) : Promise<any> {
   let characteristicUUIDwo = characteristicUUID.toLowerCase()
 
   const characteristics = await service.characteristics();
@@ -137,9 +138,9 @@ async function get_char(service: any, characteristicUUID: String) : Promise<any>
  * @returns {Promise<BluetoothRemoteGATTCharacteristic>} A BluetoothRemoteGATTCharacteristic object.
  */
 export const getCharacteristic = async function (
-  id: any,
-  serviceUUID: any,
-  characteristicUUID: any
+  id: string,
+  serviceUUID: string,
+  characteristicUUID: string
 ) {
   const service: any = await getPrimaryService(id, serviceUUID);
   if (!service) {
@@ -174,7 +175,7 @@ export const getCharacteristic = async function (
  * @return {Promise} representation of the complete request with response.
  * @public
  */
-export const read = async function (id: any, serviceUUID: any, characteristicUUID: any) {
+export const read = async function (id: string, serviceUUID: string, characteristicUUID: string) {
   const characteristic: any = await getCharacteristic(
     id,
     serviceUUID,
@@ -210,7 +211,7 @@ export const read = async function (id: any, serviceUUID: any, characteristicUUI
  * @returns {string} the value of the characteristic.
  * @public
  */
-export const readInt = async function (id: any, serviceUUID: any, characteristicUUID: any) {
+export const readInt = async function (id: string, serviceUUID: string, characteristicUUID: string) {
   let buffer = await read(id, serviceUUID, characteristicUUID);
   const length = buffer.length;
   const result = buffer.readIntLE(0, length);
@@ -226,7 +227,7 @@ export const readInt = async function (id: any, serviceUUID: any, characteristic
  * @returns {string} the value of the characteristic.
  * @public
  */
-export const readUInt = async function (id: any, serviceUUID: any, characteristicUUID: any) {
+export const readUInt = async function (id: string, serviceUUID: string, characteristicUUID: string) {
   let buffer = await read(id, serviceUUID, characteristicUUID);
   const length = buffer.length;
   const result = buffer.readUIntLE(0, length);
@@ -243,9 +244,9 @@ export const readUInt = async function (id: any, serviceUUID: any, characteristi
  * @returns {Promise<void>} A Promise to void.
  */
 export const writeWithoutResponse = async function (
-  id: any,
-  serviceUUID: any,
-  characteristicUUID: any,
+  id: string,
+  serviceUUID: string,
+  characteristicUUID: string,
   value: any
 ) {
   const characteristic: any = await getCharacteristic(
@@ -295,9 +296,9 @@ export const writeWithoutResponse = async function (
  * @returns {Promise} representation of the complete request with response.
  */
 export const writeWithResponse = async function (
-  id: any,
-  serviceUUID: any,
-  characteristicUUID: any,
+  id: string,
+  serviceUUID: string,
+  characteristicUUID: string,
   value: any
 ) {
   const characteristic: any = await getCharacteristic(

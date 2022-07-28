@@ -106,22 +106,6 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
   return service;
 };
 
-
-async function get_char(service: any, characteristicUUID: string) : Promise<any> {
-  let characteristicUUIDwo = characteristicUUID.toLowerCase()
-
-  const characteristics = await service.characteristics();
-  let characteristic = undefined;
-  characteristics.forEach((characteristicID : any) => {
-    if (characteristicID == characteristicUUIDwo){
-      characteristic = service.getCharacteristic(characteristicID);
-    }
-  });
-
-  return characteristic;
- 
-}
-
 /**
  * Returns a promise to the BluetoothRemoteGATTCharacteristic offered by
  * the bluetooth device for a specified BluetoothServiceUUID and
@@ -148,7 +132,7 @@ export const getCharacteristic = async function (
       'Bluetooth',
       id
     );
-    characteristic = await get_char(service, characteristicUUID);
+    characteristic = await service.getCharacteristic(characteristicUUID.toLowerCase());
     console.log("[binding-Bluetooth]",
       `Got characteristic ${characteristicUUID} from service ${serviceUUID}`,
       'Bluetooth',

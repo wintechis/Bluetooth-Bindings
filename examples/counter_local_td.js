@@ -107,6 +107,14 @@ const td = {
 try {
     servient.start().then(async (WoT) => {
         let thing = await WoT.consume(td)
+
+        /*
+        thing.subscribeEvent("valueChange", async (data) => {
+            // Here we are simply logging the message when the event is emitted
+            // But, of course, could have a much more sophisticated handler
+            log("outOfResource event:", await data.value());
+        });*/
+        
         const read1 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read1.value());
         await thing.writeProperty("incrementStepSize", "06")
@@ -114,6 +122,7 @@ try {
         const read2 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read2.value());
         await blast_Bluetooth_core.tearDown()
+        
     });
 }
 catch (err) {

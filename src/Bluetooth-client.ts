@@ -68,7 +68,7 @@ export default class BluetoothClient implements ProtocolClient {
         };
     }
 
-    public writeResource(
+    public async writeResource(
         form: BluetoothForm,
         content: Content
     ): Promise<void> {
@@ -81,13 +81,45 @@ export default class BluetoothClient implements ProtocolClient {
         const operation = form.op
         const ble_operation = form["htv:methodName"] as string
 
-        return this.write(
-            deviceId,
-            serviceId,
-            characteristicId,
-            ble_operation,
-            content
-          );
+
+        let value = ''
+        //Convert readableStreamToString
+        if (typeof content != "undefined"){
+          const chunks = [];
+          for await (const chunk of content.body) {
+              chunks.push(chunk as Buffer);
+          }
+          const buffer = Buffer.concat(chunks);
+          value = new TextDecoder().decode(buffer);
+  
+          }
+          console.log("OPERATION", ble_operation)
+          switch (ble_operation) {
+              case 'write':
+                console.debug(
+                  '[binding-Bluetooth]',
+                  `invoking writeWithResponse with value ${value}`
+                );
+                await writeWithResponse(deviceId, serviceId, characteristicId, value);
+                break;
+              case 'write-without-response':
+                console.debug(
+                  '[binding-Bluetooth]',
+                  `invoking writeWithoutResponse with value ${value}`
+                );
+                await writeWithoutResponse(
+                  deviceId,
+                  serviceId,
+                  characteristicId,
+                  value
+                );
+                break;
+              default: {
+                throw new Error(
+                  `[binding-Bluetooth] unknown operation ${operation}`
+                );
+              }
+          }
     }
     
     public async invokeResource(
@@ -120,8 +152,11 @@ export default class BluetoothClient implements ProtocolClient {
     ): Promise<Subscription> {
 
         const path = form.href.split('//')[1];
-        console.log("SUBSCRIBE")
-
+        const deviceId = path.split("/")[0].replace(/(.{2})/g,"$1:").slice(0, -1);
+        const serviceId = path.split("/")[1];
+        const characteristicId = path.split("/")[2];
+        
+        //throw new Error ("LKSDJFÖ")
         return new Subscription(() => { });
     }
 
@@ -139,51 +174,4 @@ export default class BluetoothClient implements ProtocolClient {
     ): boolean {
         return false;
     }
-
-    private async write(
-        deviceId: string,
-        serviceId: string,
-        characteristicId: string,
-        operation: string,
-        content: Content
-      ) {
-        let value = ''
-        //Convert readableStreamToString
-        if (typeof content != "undefined"){
-          const chunks = [];
-          for await (const chunk of content.body) {
-              chunks.push(chunk as Buffer);
-          }
-          const buffer = Buffer.concat(chunks);
-          value = new TextDecoder().decode(buffer);
-  
-          }
-
-          switch (operation) {
-              case 'write':
-                console.debug(
-                  '[binding-Bluetooth]',
-                  `invoking writeWithResponse with value ${value}`
-                );
-                await writeWithResponse(deviceId, serviceId, characteristicId, value);
-                break;
-              case 'write-without-response':
-                console.debug(
-                  '[binding-Bluetooth]',
-                  `invoking writeWithoutResponse with value ${value}`
-                );
-                await writeWithoutResponse(
-                  deviceId,
-                  serviceId,
-                  characteristicId,
-                  value
-                );
-                break;
-              default: {
-                throw new Error(
-                  `[binding-Bluetooth] unknown operation ${operation}`
-                );
-              }
-          }
-        }
 }

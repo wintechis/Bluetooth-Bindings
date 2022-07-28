@@ -35,7 +35,7 @@ const td = {
             "readOnly": true,
             "forms": [
                 {
-                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
+                    "href": "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
                     "bir:receivedDataformat": "int16",
                     "bir:expectedDataformat": "None",
                     "op": [
@@ -53,7 +53,7 @@ const td = {
             "readOnly": false,
             "forms": [
                 {
-                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
+                    "href": "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
                     "bir:receivedDataformat": "None",
                     "bir:expectedDataformat": "None",
                     "op": [
@@ -70,7 +70,7 @@ const td = {
         "incrementCounter": {
             "forms": [
                 {
-                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
+                    "href": "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
                     "bir:receivedDataformat": "None",
                     "bir:expectedDataformat": "None",
                     "op": [
@@ -88,7 +88,7 @@ const td = {
         "valueChange": {
             "forms": [
                 {
-                    "href": "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
+                    "href": "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
                     "bir:receivedDataformat": "None",
                     "bir:expectedDataformat": "None",
                     "op": [

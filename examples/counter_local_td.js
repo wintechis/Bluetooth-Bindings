@@ -2,7 +2,7 @@
 // Required steps to create a servient for a client
 const { Servient, Helpers } = require("@node-wot/core");
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
-const blast_Bluetooth = require('../dist/src/blast_Bluetooth')
+const blast_Bluetooth_core = require('../dist/src/blast_Bluetooth_core')
 
 
 const servient = new Servient();
@@ -113,7 +113,7 @@ try {
         await thing.invokeAction("incrementCounter");
         const read2 = await thing.readProperty("counterValue");
         console.log("'counterValue' Property has value:", await read2.value());
-        await blast_Bluetooth.tearDown()
+        await blast_Bluetooth_core.tearDown()
     });
 }
 catch (err) {

@@ -67,41 +67,43 @@ export default class BluetoothClient implements ProtocolClient {
     return "[BluetoothClient]";
   }
 
+  /**
+   * Reads the value of a ressource
+   * @param {BluetoothForm} form form of property to read.
+   * @returns {Promise} Promise that resolves to the read value.
+   */
   public async readResource(form: BluetoothForm): Promise<Content> {
-    const path = form.href.split("//")[1];
-    // c03c59a89106  -> c0:3c:59:a8:91:06
-    const deviceId = path
-      .split("/")[0]
-      .replace(/(.{2})/g, "$1:")
-      .slice(0, -1);
-    const serviceId = path.split("/")[1];
-    const characteristicId = path.split("/")[2];
-    const expectedDataformat = form["bir:expectedDataformat"] as string;
-    const receivedDataformat = form["bir:receivedDataformat"] as string;
-    //const operation = form.op
-    const ble_operation = form["htvf:methodName"];
+    const deconstructedForm = this.deconstructForm(form);
 
     // dataformat form td is mapped to correct operation
-    let operation = handler_map[receivedDataformat];
+    let operation = handler_map[deconstructedForm.receivedDataformat];
 
     let value = "";
     switch (operation) {
       case "readInt":
         console.debug(
           "[binding-Bluetooth]",
-          `invoking readInt with serviceId ${serviceId} characteristicId ${characteristicId}`
+          `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
         );
         value = (
-          await readInt(deviceId, serviceId, characteristicId)
+          await readInt(
+            deconstructedForm.deviceId,
+            deconstructedForm.serviceId,
+            deconstructedForm.characteristicId
+          )
         ).toString();
         break;
       case "readUInt":
         console.debug(
           "[binding-Bluetooth]",
-          `invoking readInt with serviceId ${serviceId} characteristicId ${characteristicId}`
+          `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
         );
         value = (
-          await readUInt(deviceId, serviceId, characteristicId)
+          await readUInt(
+            deconstructedForm.deviceId,
+            deconstructedForm.serviceId,
+            deconstructedForm.characteristicId
+          )
         ).toString();
         break;
       default: {
@@ -122,31 +124,17 @@ export default class BluetoothClient implements ProtocolClient {
     };
   }
 
+  /**
+   * Writes a value to a ressource
+   * @param {BluetoothForm} form form of property to write.
+   * @param {Content} content content to write to device
+   * @returns {Promise} Promise that resolves to the read value.
+   */
   public async writeResource(
     form: BluetoothForm,
     content: Content
   ): Promise<void> {
-    const path = form.href.split("//")[1];
-    // c03c59a89106  -> c0:3c:59:a8:91:06
-    const deviceId = path
-      .split("/")[0]
-      .replace(/(.{2})/g, "$1:")
-      .slice(0, -1);
-    const serviceId = path.split("/")[1];
-    const characteristicId = path.split("/")[2];
-    const datatype = form.dataType;
-    const operation = form.op;
-    let ble_operation: any;
-    try {
-      ble_operation = form["htv:methodName"];
-    } catch {
-      throw Error("'htv:mehtodName' not provided in td");
-    }
-
-    let expectedData: any = undefined;
-    try {
-      expectedData = form["bir:expectedData"];
-    } catch {}
+    const deconstructedForm = this.deconstructForm(form);
 
     let value = "";
     //Convert readableStreamToString
@@ -160,17 +148,23 @@ export default class BluetoothClient implements ProtocolClient {
     }
 
     // If expectedData is provided in td, use it
-    if (typeof expectedData != "undefined") {
-      value = this.fill_in_form(expectedData, value);
+    if (typeof deconstructedForm.expectedData != "undefined") {
+      value = this.fill_in_form(deconstructedForm.expectedData, value);
     }
 
-    switch (ble_operation) {
+    // Select what operation should be executed
+    switch (deconstructedForm.ble_operation) {
       case "write":
         console.debug(
           "[binding-Bluetooth]",
           `invoking writeWithResponse with value ${value}`
         );
-        await writeWithResponse(deviceId, serviceId, characteristicId, value);
+        await writeWithResponse(
+          deconstructedForm.deviceId,
+          deconstructedForm.serviceId,
+          deconstructedForm.characteristicId,
+          value
+        );
         break;
       case "write-without-response":
         console.debug(
@@ -178,28 +172,35 @@ export default class BluetoothClient implements ProtocolClient {
           `invoking writeWithoutResponse with value ${value}`
         );
         await writeWithoutResponse(
-          deviceId,
-          serviceId,
-          characteristicId,
+          deconstructedForm.deviceId,
+          deconstructedForm.serviceId,
+          deconstructedForm.characteristicId,
           value
         );
         break;
       default: {
-        throw new Error(`[binding-Bluetooth] unknown operation ${operation}`);
+        throw new Error(
+          `[binding-Bluetooth] unknown operation ${deconstructedForm.operation}`
+        );
       }
     }
   }
 
+  /**
+   * Invokes an action
+   * @param {BluetoothForm} form form of action to invoke.
+   * @param {Content} content content to write to device -> Empty
+   * @returns {Promise} Promise that resolves to the read value.
+   */
   public async invokeResource(
     form: BluetoothForm,
     content: Content
   ): Promise<Content> {
-    // TODO check if href is service/char/operation, then write,
-    // might also be gatt://operation, i.e watchAdvertisements
+    // Call writeRessource without content
     return this.writeResource(form, content).then(() => {
       let s = new Readable();
-      s.push(""); // the string you want
-      s.push(null); // indicates end-of-file basically - the end of the stream
+      s.push("");
+      s.push(null);
       const body = ProtocolHelpers.toNodeStream(s as Readable);
       return {
         type: "text/plain",
@@ -212,20 +213,15 @@ export default class BluetoothClient implements ProtocolClient {
     throw new Error("not implemented");
   }
 
+  /**
+   * Subscribe to an "notify" event
+   */
   public async subscribeResource(
     form: BluetoothForm,
     next: (content: Content) => void,
     error?: (error: Error) => void,
     complete?: () => void
   ): Promise<Subscription> {
-    const path = form.href.split("//")[1];
-    const deviceId = path
-      .split("/")[0]
-      .replace(/(.{2})/g, "$1:")
-      .slice(0, -1);
-    const serviceId = path.split("/")[1];
-    const characteristicId = path.split("/")[2];
-
     this.subscribeToCharacteristic(form, next, error, complete);
 
     return new Subscription(() => {});
@@ -252,32 +248,22 @@ export default class BluetoothClient implements ProtocolClient {
     error?: (error: Error) => void,
     complete?: () => void
   ): Promise<Subscription> {
-    const path = form.href.split("//")[1];
-    // c03c59a89106  -> c0:3c:59:a8:91:06
-    const deviceId = path
-      .split("/")[0]
-      .replace(/(.{2})/g, "$1:")
-      .slice(0, -1);
-    const serviceId = path.split("/")[1];
-    const characteristicId = path.split("/")[2];
-    const datatype = form.dataType;
-    const operation = form.op;
-    const ble_operation = form["htv:methodName"] as string;
+    const deconstructedForm = this.deconstructForm(form);
 
-    if (ble_operation !== "notify") {
+    if (deconstructedForm.ble_operation !== "notify") {
       throw new Error(
-        `[binding-webBluetooth] operation ${ble_operation} is not supported`
+        `[binding-webBluetooth] operation ${deconstructedForm.ble_operation} is not supported`
       );
     }
     console.debug(
       "[binding-webBluetooth]",
-      `subscribing to characteristic with serviceId ${serviceId} characteristicId ${characteristicId}`
+      `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
     );
 
     const characteristic = await getCharacteristic(
-      deviceId,
-      serviceId,
-      characteristicId
+      deconstructedForm.deviceId,
+      deconstructedForm.serviceId,
+      deconstructedForm.characteristicId
     );
     await characteristic.startNotifications();
 
@@ -288,8 +274,8 @@ export default class BluetoothClient implements ProtocolClient {
         const array = new Uint8Array(buffer);
         // Convert value a DataView to ReadableStream
         let s = new Readable();
-        s.push(array); // the string you want
-        s.push(null); // indicates end-of-file basically - the end of the stream
+        s.push(array);
+        s.push(null);
         const body = ProtocolHelpers.toNodeStream(s as Readable);
         const content = {
           type: form.contentType || "text/plain",
@@ -308,6 +294,60 @@ export default class BluetoothClient implements ProtocolClient {
   private async unsubscribe(characteristic: any) {
     await characteristic.stopNotifications();
   }
+
+  /**
+   * Deconsructs form in object
+   * @param {Form} form form to analyze
+   * @returns {Object} Object containing all parameters
+   */
+  private deconstructForm = function (form: BluetoothForm) {
+    const deconstructedForm: Record<string, any> = {};
+
+    // Remove gatt://
+    deconstructedForm.path = form.href.split("//")[1];
+
+    // DeviceId is mac of device. Add :
+    // e.g. c03c59a89106  -> c0:3c:59:a8:91:06
+    deconstructedForm.deviceId = deconstructedForm.path
+      .split("/")[0]
+      .replace(/(.{2})/g, "$1:")
+      .slice(0, -1);
+
+    // Extract serviceId
+    deconstructedForm.serviceId = deconstructedForm.path.split("/")[1];
+
+    // Extract characteristicId
+    deconstructedForm.characteristicId = deconstructedForm.path.split("/")[2];
+
+    // Extract expectedDataformat
+    deconstructedForm.expectedDataformat = form[
+      "bir:expectedDataformat"
+    ] as string;
+
+    // Extract receivedDataformat
+    deconstructedForm.receivedDataformat = form[
+      "bir:receivedDataformat"
+    ] as string;
+
+    // Extract receivedDataformat
+    deconstructedForm.operation = form.op;
+
+    const datatype = form.dataType;
+
+    let ble_operation: any;
+    try {
+      ble_operation = form["htv:methodName"];
+    } catch {
+      throw Error("'htv:mehtodName' not provided in td");
+    }
+
+    let expectedData: any = undefined;
+    try {
+      expectedData = form["bir:expectedData"];
+    } catch {}
+
+    return deconstructedForm;
+  };
 
   private fill_in_form(expectedData: any, value: any) {
     value = value.replace('"', "");

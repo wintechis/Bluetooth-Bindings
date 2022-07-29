@@ -301,6 +301,14 @@ export default class BluetoothClient implements ProtocolClient {
    * @returns {Object} Object containing all parameters
    */
   private deconstructForm = function (form: BluetoothForm) {
+    // See https://github.com/FreuMi/GATT_Thing/blob/main/notes/BLE_binding_template.md#ble-default-vocabulary-terms
+    const wot2bleOperation: any = {
+      readproperty: "read",
+      writeproperty: "write",
+      invokeaction: "write-without-response",
+      subscribeevent: "notify",
+    };
+
     const deconstructedForm: Record<string, any> = {};
 
     // Remove gatt://
@@ -329,21 +337,28 @@ export default class BluetoothClient implements ProtocolClient {
       "bir:receivedDataformat"
     ] as string;
 
-    // Extract receivedDataformat
+    // Extract operation -> e.g. readproperty; writeproperty
     deconstructedForm.operation = form.op;
 
-    const datatype = form.dataType;
+    // Get ble operation with wot2bleOperation map
+    const expected_ble_operation =
+      wot2bleOperation[deconstructedForm.operation];
 
-    let ble_operation: any;
+    // Get BLE operation type
     try {
-      ble_operation = form["htv:methodName"];
+      deconstructedForm.ble_operation = form["bir:methodName"];
     } catch {
-      throw Error("'htv:mehtodName' not provided in td");
+      deconstructedForm.ble_operation = expected_ble_operation;
     }
 
-    let expectedData: any = undefined;
+    // Check if expected operation equal to operation in td
+    if (deconstructedForm.ble_operation != expected_ble_operation) {
+      throw new Error("op and bir:methodName do not match!");
+    }
+
+    deconstructedForm.expectedData = undefined;
     try {
-      expectedData = form["bir:expectedData"];
+      deconstructedForm.expectedData = form["bir:expectedData"];
     } catch {}
 
     return deconstructedForm;

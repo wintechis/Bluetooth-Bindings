@@ -32,7 +32,7 @@ const read = async function (
   );
   try {
     //const thingsLog = getThingsLog();
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       `Invoke ReadValue on characteristic ${characteristicUUID}` +
         ` from service ${serviceUUID}`,
@@ -40,7 +40,7 @@ const read = async function (
       id
     );
     const value: any = await characteristic.readValue();
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       `Finished ReadValue on characteristic ${characteristicUUID}` +
         ` from service ${serviceUUID} - value: ${value.toString()}`,
@@ -131,7 +131,7 @@ const write = async function (
 
   try {
     if (withResponse) {
-      console.log(
+      console.debug(
         "[binding-Bluetooth]",
         "Invoke WriteValueWithResponse on characteristic " +
           `${characteristicUUID} with value ${value.toString()}`,
@@ -139,7 +139,7 @@ const write = async function (
         id
       );
       await characteristic.writeValue(value, { offset: 0, type: "request" });
-      console.log(
+      console.debug(
         "[binding-Bluetooth]",
         "Finished WriteValueWithResponse on characteristic " +
           `${characteristicUUID} with value ${value.toString()}`,
@@ -147,7 +147,7 @@ const write = async function (
         id
       );
     } else {
-      console.log(
+      console.debug(
         "[binding-Bluetooth]",
         "Invoke WriteValueWithoutResponse on characteristic " +
           `${characteristicUUID} with value ${value.toString()}`,
@@ -155,7 +155,7 @@ const write = async function (
         id
       );
       await characteristic.writeValue(value, { offset: 0, type: "command" });
-      console.log(
+      console.debug(
         "[binding-Bluetooth]",
         "Finished WriteValueWithoutResponse on characteristic " +
           `${characteristicUUID} with value ${value.toString()}`,
@@ -225,29 +225,29 @@ export const subscribe = async function (
   handler: any
 ) {
   const characteristic = await getCharacteristic(id, serviceUUID, charUUID);
-  console.log(
+  console.debug(
     `Add 'characteristicvaluechanged' listener to characteristic ${charUUID}` +
-      ` of service <code>${serviceUUID}</code>`,
+      ` of service ${serviceUUID}`,
     "Bluetooth",
     id
   );
   try {
-    console.log(
-      `Invoke <code>startNotifications</code> on characteristic ${charUUID}` +
-        ` from service <code>${serviceUUID}</code>`,
+    console.debug(
+      `Invoke startNotifications on characteristic ${charUUID}` +
+        ` from service ${serviceUUID}`,
       "Bluetooth",
       id
     );
     await characteristic.startNotifications();
-    console.log(
-      `Finished <code>startNotifications</code> on characteristic ${charUUID}` +
-        ` from service <code>${serviceUUID}</code>`,
+    console.debug(
+      `Finished startNotifications on characteristic ${charUUID}` +
+        ` from service ${serviceUUID}`,
       "Bluetooth",
       id
     );
   } catch (error) {
     console.error(error);
-    console.log(`Error subscribing to Bluetooth device ${id}`);
+    console.error(`Error subscribing to Bluetooth device ${id}`);
   }
 };
 

@@ -46,7 +46,7 @@ const td = {
             },
           ],
           op: ["writeproperty"],
-          "htv:methodName": "write-without-response",
+          "bir:methodName": "write",
         },
       ],
       writeOnly: true,

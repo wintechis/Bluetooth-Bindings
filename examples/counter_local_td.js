@@ -4,12 +4,12 @@ const { Servient, Helpers } = require("@node-wot/core");
 const Bluetooth_client_factory = require("../dist/src/Bluetooth-client-factory");
 const blast_Bluetooth_core = require("../dist/src/blast_Bluetooth_core");
 
+const servient = new Servient();
+servient.addClientFactory(new Bluetooth_client_factory.default());
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-const servient = new Servient();
-servient.addClientFactory(new Bluetooth_client_factory.default());
 
 const td = {
   "@context": [
@@ -40,7 +40,7 @@ const td = {
           "bir:receivedDataformat": "int16",
           "bir:expectedDataformat": "None",
           op: ["readproperty"],
-          "htv:methodName": "read",
+          "bir:methodName": "read",
         },
       ],
       writeOnly: false,
@@ -56,7 +56,7 @@ const td = {
           "bir:receivedDataformat": "None",
           "bir:expectedDataformat": "None",
           op: ["writeproperty"],
-          "htv:methodName": "write",
+          "bir:methodName": "write",
         },
       ],
       writeOnly: true,
@@ -71,7 +71,7 @@ const td = {
           "bir:receivedDataformat": "None",
           "bir:expectedDataformat": "None",
           op: ["invokeaction"],
-          "htv:methodName": "write-without-response",
+          "bir:methodName": "write-without-response",
         },
       ],
       idempotent: false,
@@ -87,7 +87,7 @@ const td = {
           "bir:receivedDataformat": "None",
           "bir:expectedDataformat": "None",
           op: ["subscribeevent"],
-          "htv:methodName": "notify",
+          "bir:methodName": "notify",
         },
       ],
       description: "change event",
@@ -114,7 +114,8 @@ try {
     await thing.invokeAction("incrementCounter");
     const read2 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read2.value());
-    await blast_Bluetooth_core.tearDown();
+
+    await sleep(3000);
 
     await blast_Bluetooth_core.closeBluetooth();
   });

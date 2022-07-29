@@ -23,7 +23,7 @@ export const getDeviceById = async function (id: string) {
       if (!(await adapter.isDiscovering())) {
         await adapter.startDiscovery();
       }
-      console.log("[binding-Bluetooth]", "Scanning started");
+      console.debug("[binding-Bluetooth]", "Scanning started");
 
       const device = await adapter.waitDevice(id);
       return device;
@@ -56,7 +56,7 @@ const connect = async function (id: string) {
   // Check if already connected
   try {
     if (connected_macs.includes(id)) {
-      console.log(
+      console.debug(
         "[binding-Bluetooth]",
         `Device ${id} already connected`,
         "Bluetooth"
@@ -64,7 +64,7 @@ const connect = async function (id: string) {
       return connected_devices[connected_macs.indexOf(id)];
     } else {
       const device = (await getDeviceById(id)) as any;
-      console.log("[binding-Bluetooth]", `Connecting to ${id}`, "Bluetooth");
+      console.debug("[binding-Bluetooth]", `Connecting to ${id}`, "Bluetooth");
       await device.connect();
       connected_devices.push(device);
       connected_macs.push(id);
@@ -88,7 +88,7 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
 
   let service;
   try {
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       `Getting primary service ${serviceUUID}`,
       "Bluetooth",
@@ -97,7 +97,7 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
 
     service = await gattServer.getPrimaryService(serviceUUID);
 
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       `Got primary service ${serviceUUID}`,
       "Bluetooth",
@@ -132,8 +132,7 @@ export const getCharacteristic = async function (
   }
   let characteristic;
   try {
-    //const thingsLog = getThingsLog();
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       `Getting characteristic ${characteristicUUID} from service ${serviceUUID}`,
       "Bluetooth",
@@ -142,7 +141,7 @@ export const getCharacteristic = async function (
     characteristic = await service.getCharacteristic(
       characteristicUUID.toLowerCase()
     );
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       `Got characteristic ${characteristicUUID} from service ${serviceUUID}`,
       "Bluetooth",
@@ -167,7 +166,7 @@ export const hexStringToArrayBuffer = function (hexString: any) {
   // check for some non-hex characters
   const bad = hexString.match(/[G-Z\s]/i);
   if (bad) {
-    console.log("WARNING: found non-hex characters", bad, "trying to correct");
+    console.warn("WARNING: found non-hex characters", bad, "trying to correct");
   }
 
   hexString = hexString.replace(/[^\w\s]/gi, ""); // special char and white space
@@ -188,7 +187,7 @@ export const hexStringToArrayBuffer = function (hexString: any) {
  */
 export const tearDown = async function () {
   for (const element of connected_devices) {
-    console.log(
+    console.debug(
       "[binding-Bluetooth]",
       "Disconnecting from Device:",
       element.device

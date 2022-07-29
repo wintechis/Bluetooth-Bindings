@@ -1,4 +1,4 @@
-# Bluetooth
+# Bluetooth Specification
 Information about Bluetooth from the [Core specification](https://www.bluetooth.com/specifications/specs/core-specification-5-3/).
 
 ## GENERIC ACCESS PROFILE (GAP) [6.2]
@@ -58,3 +58,7 @@ Information about Bluetooth from the [Core specification](https://www.bluetooth.
 ### Additonal Information
 - The maximum length of an attribute value shall be 512 octets. [3.2.9]
     + Each of Services, Characteristics, and Descriptors is an attribute, so max length is 512 bytes
+
+
+# Bluetooth URI Scheme
+Information is gathered from the [BLE URI Scheme proposal](https://datatracker.ietf.org/doc/html/draft-bormann-t2trg-ble-uri-00).

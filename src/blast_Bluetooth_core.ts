@@ -157,7 +157,6 @@ export const getCharacteristic = async function (
 
 /**
  * Convert a hex string to an ArrayBuffer.
- *
  * @param {string} hexString - hex representation of bytes
  * @return {ArrayBuffer} - The bytes in an ArrayBuffer.
  */
@@ -184,11 +183,9 @@ export const hexStringToArrayBuffer = function (hexString: any) {
   return hexString;
 };
 
-export const closeBluetooth = async function () {
-  await tearDown();
-  destroy();
-};
-
+/**
+ * Disconnects from all connected devices
+ */
 export const tearDown = async function () {
   for (const element of connected_devices) {
     console.log(
@@ -204,5 +201,10 @@ export const tearDown = async function () {
 };
 
 /**
- * Should be in sperate file
- **/
+ * Disconnects from all connected devices and stops all operations by node-ble.
+ * Needed to exit programm after execution.
+ */
+export const closeBluetooth = async function () {
+  await tearDown();
+  destroy();
+};

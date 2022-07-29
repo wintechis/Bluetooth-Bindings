@@ -12,7 +12,7 @@ The http Vocablary is based on the http ontology with prefix "htv". Similar to t
 | bir:methodName |BLE method name (Literal) | required | string |
 | bir:receivedDataFormat | Dataformat of received binary buffer (Literal). TODO: Can be read from descriptor? | required | string |
 | bir:expectedDataFormat | Dataformat of sent binary buffer (Literal). TODO Is this still needed if "bir:expectedData" exists? | required | string |
-| bir:expectedData | Container with form and expected parameter. TODO How to represent order in RDF? | optional | string? |
+| bir:expectedData | Container with form and expected parameter. TODO How to represent order in RDF? [Check here](http://infolab.stanford.edu/~stefan/daml/order.html)| optional | string? |
 | bir:hasForm | String Template with expected parameter | required with bir:expectedData | ??? |
 | bir:hasParameter | String with expected parameter and datatype | required with bir:expectedData | ??? |
 

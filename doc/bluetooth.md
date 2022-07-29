@@ -1,5 +1,5 @@
 # Bluetooth
-Information about Bluetooth from the (Core specification)[https://www.bluetooth.com/specifications/specs/core-specification-5-3/] 
+Information about Bluetooth from the [Core specification](https://www.bluetooth.com/specifications/specs/core-specification-5-3/).
 
 ## GENERIC ACCESS PROFILE (GAP) [6.2]
  

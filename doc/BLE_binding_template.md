@@ -69,8 +69,35 @@ In the following table "write" can be replaced with "write-without-response" for
 | readmultipleproperties | "htv:methodName": "GET" | "bir:methodName": "read" | 
 | writemultipleproperties | "htv:methodName": "PUT" | "bir:methodName": "write" | 
 | subscribeevent | --- | "bir:methodName": "notify" |
+| unsubscribeevent | --- | "bir:methodName": ? |
 
 Tested: readproperty, writeproperty, invokeaction
 
 ## Example Sequences of Interaction Affordances (UML)
 TODO: Create UML Sequence Diagramms
+
+
+## Contributions
+### How to design a WoT GATT Structure?
+![WoTGATT drawio](https://user-images.githubusercontent.com/91477109/181746040-7d01e5e1-19d0-4d7b-8ed2-ebef10fe75f0.png)
+
+On a GATT server there should be a WoT Service identified by a standardized WoT UUID. The WoT Service should contain the interaction affordances for proerties, actions, and events encapsulated in WoT Characteristics with user selected UUIDs. These Characteristics can optionally be described by a descriptor (How is this noted in the TD?). Besides the WoT Charateristics there can be an optional Characteristic that contains an URI to a WoT Thing Description for the device hosted on the web. 
+
+With this setup a there are two interaction possibilities for a client.
+1. A client can connect to the device, search for the standardized WoT Service, select the TD URI Characteristic and read the URI of the TD. After the client has fetched the URI interactions based on the TD are possible.
+2. A client has already stored the needed TD where the mac address of the device is specified. The client can connect and start interacting with the device.
+
+### What needs to be added to a TD for GATT?
+- Human and machine readable
+- See section above
+
+### Implementing BLE Bindings for Node WoT
+- Implementation in Progress.
+
+
+## Limitations
+- Need to stay connected to receive notifications -> only limited number of devcies can connect at the same time
+## TODOs:
+- Implement unsubscribe
+- implement read descriptor
+- Test connect to multiple devices

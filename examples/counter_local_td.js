@@ -2,7 +2,7 @@
 // Required steps to create a servient for a client
 const { Servient, Helpers } = require("@node-wot/core");
 const Bluetooth_client_factory = require("../dist/src/Bluetooth-client-factory");
-const blast_Bluetooth_core = require("../dist/src/blast_Bluetooth_core");
+const blast_Bluetooth_core = require("../dist/src/bluetooth/blast_Bluetooth_core");
 
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
@@ -37,6 +37,7 @@ const td = {
       forms: [
         {
           href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
           "bir:receivedDataformat": "int16",
           "bir:expectedDataformat": "None",
           op: ["readproperty"],
@@ -53,6 +54,7 @@ const td = {
       forms: [
         {
           href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
           "bir:receivedDataformat": "None",
           "bir:expectedDataformat": "None",
           op: ["writeproperty"],
@@ -68,6 +70,7 @@ const td = {
       forms: [
         {
           href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
           "bir:receivedDataformat": "None",
           "bir:expectedDataformat": "None",
           op: ["invokeaction"],
@@ -98,15 +101,15 @@ const td = {
 try {
   servient.start().then(async (WoT) => {
     let thing = await WoT.consume(td);
-
+    /*
     thing.subscribeEvent("valueChange", async (data) => {
       // Here we are simply logging the message when the event is emitted
       // But, of course, could have a much more sophisticated handler
       console.log("CounterChange event Occured!!:", await data.value());
     });
-
-    await sleep(10000);
-    await thing.invokeAction("incrementCounter");
+    */
+    //await sleep(10000);
+    //await thing.invokeAction("incrementCounter");
 
     const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());

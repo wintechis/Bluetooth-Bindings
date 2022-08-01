@@ -34,15 +34,18 @@ const td = {
       type: "integer",
       observable: false,
       readOnly: true,
+
+      dataFormat: "int16",
+      byteOrder: "little", //or big
+
       forms: [
         {
           href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
-          contentType: "application/ble+octet-stream",
-          "bir:receivedDataformat": "int16",
-          "bir:expectedDataformat": "None",
           op: ["readproperty"],
           "bir:methodName": "read",
+          contentType: "application/ble+octet-stream"
         },
+        
       ],
       writeOnly: false,
       description: "current counter value",
@@ -113,10 +116,10 @@ try {
 
     const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());
-    await thing.writeProperty("incrementStepSize", "06");
-    await thing.invokeAction("incrementCounter");
-    const read2 = await thing.readProperty("counterValue");
-    console.log("'counterValue' Property has value:", await read2.value());
+    //await thing.writeProperty("incrementStepSize", "06");
+    //await thing.invokeAction("incrementCounter");
+    //const read2 = await thing.readProperty("counterValue");
+    //console.log("'counterValue' Property has value:", await read2.value());
 
     await sleep(3000);
 

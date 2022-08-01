@@ -5,37 +5,11 @@ import { Subscription } from "rxjs";
 import { Readable } from "stream";
 
 import {
-  readInt,
-  readUInt,
+  read,
   writeWithResponse,
   writeWithoutResponse,
 } from "./bluetooth/blast_Bluetooth";
 import { getCharacteristic } from "./bluetooth/blast_Bluetooth_core";
-
-const handler_map: any = {
-  int8: "readInt",
-  int12: "readInt",
-  int16: "readInt",
-  int24: "readInt",
-  int32: "readInt",
-  int48: "readInt",
-  int64: "readInt",
-  int128: "readInt",
-  uint2: "readUInt",
-  uint4: "readUInt",
-  uint8: "readUInt",
-  uint12: "readUInt",
-  uint16: "readUInt",
-  uint24: "readUInt",
-  uint32: "readUInt",
-  uint48: "readUInt",
-  uint64: "readUInt",
-  uint128: "readUInt",
-  float32: "readFloat",
-  float64: "readFloat",
-  stringUTF8: "readUTF8",
-  stringUTF16: "readUTF16",
-};
 
 const template_map: any = {
   int8: "number",
@@ -75,51 +49,24 @@ export default class BluetoothClient implements ProtocolClient {
   public async readResource(form: BluetoothForm): Promise<Content> {
     const deconstructedForm = this.deconstructForm(form);
 
-    // dataformat form td is mapped to correct operation
-    let operation = handler_map[deconstructedForm.receivedDataformat];
-
     let value = "";
-    switch (operation) {
-      case "readInt":
-        console.debug(
-          "[binding-Bluetooth]",
-          `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
-        );
-        value = (
-          await readInt(
-            deconstructedForm.deviceId,
-            deconstructedForm.serviceId,
-            deconstructedForm.characteristicId
-          )
-        ).toString();
-        break;
-      case "readUInt":
-        console.debug(
-          "[binding-Bluetooth]",
-          `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
-        );
-        value = (
-          await readUInt(
-            deconstructedForm.deviceId,
-            deconstructedForm.serviceId,
-            deconstructedForm.characteristicId
-          )
-        ).toString();
-        break;
-      default: {
-        throw new Error(
-          `[binding-Bluetooth] unknown return format ${operation}`
-        );
-      }
-    }
+    console.debug(
+      "[binding-Bluetooth]",
+      `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+    );
+    value = await read(
+      deconstructedForm.deviceId,
+      deconstructedForm.serviceId,
+      deconstructedForm.characteristicId
+    );
 
     let s = new Readable();
-    s.push(value); // the string you want
-    s.push(null); // indicates end-of-file basically - the end of the stream
+    s.push(value); // string to encode
+    s.push(null); // indicates end-of-file; end of the stream
     const body = ProtocolHelpers.toNodeStream(s as Readable);
 
     return {
-      type: "application/json",
+      type: "application/ble+octet-stream",
       body: body,
     };
   }

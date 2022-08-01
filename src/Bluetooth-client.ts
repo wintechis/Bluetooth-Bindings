@@ -9,8 +9,8 @@ import {
   readUInt,
   writeWithResponse,
   writeWithoutResponse,
-} from "./blast_Bluetooth.js";
-import { getCharacteristic } from "./blast_Bluetooth_core.js";
+} from "./bluetooth/blast_Bluetooth";
+import { getCharacteristic } from "./bluetooth/blast_Bluetooth_core";
 
 const handler_map: any = {
   int8: "readInt",

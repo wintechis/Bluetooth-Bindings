@@ -31,6 +31,8 @@ export class BLEBinaryCodec implements ContentCodec {
     return "application/ble+octet-stream";
   }
 
+  // TODO: schema validation
+
   bytesToValue(
     bytes: Buffer,
     schema: DataSchema,
@@ -38,47 +40,19 @@ export class BLEBinaryCodec implements ContentCodec {
   ): DataSchemaValue {
     let parsed;
 
+    const length = bytes.length;
+
     if (schema.byteOrder == "little") {
-      switch (schema.dataFormat) {
-        case "int8":
-          parsed = bytes.readInt8();
-          break;
-        case "int16":
-          parsed = bytes.readInt16LE();
-          break;
-        case "int32":
-          parsed = bytes.readInt32LE();
-          break;
-        case "uint8":
-          parsed = bytes.readUInt8();
-          break;
-        case "uint16":
-          parsed = bytes.readUInt16LE();
-          break;
-        case "uint32":
-          parsed = bytes.readUInt32LE();
-          break;
+      if (schema.signed) {
+        parsed = bytes.readIntLE(0, length);
+      } else {
+        parsed = bytes.readUIntLE(0, length);
       }
     } else if (schema.byteOrder == "big") {
-      switch (schema.dataFormat) {
-        case "int8":
-          parsed = bytes.readInt8();
-          break;
-        case "int16":
-          parsed = bytes.readInt16BE();
-          break;
-        case "int32":
-          parsed = bytes.readInt32BE();
-          break;
-        case "uint8":
-          parsed = bytes.readUInt8();
-          break;
-        case "uint16":
-          parsed = bytes.readUInt16BE();
-          break;
-        case "uint32":
-          parsed = bytes.readUInt32BE();
-          break;
+      if (schema.signed) {
+        parsed = bytes.readIntBE(0, length);
+      } else {
+        parsed = bytes.readUIntBE(0, length);
       }
     } else {
       throw new Error("Byteorder not availavle! Select 'big' or 'little'.");
@@ -88,21 +62,19 @@ export class BLEBinaryCodec implements ContentCodec {
   }
 
   valueToBytes(
-    dataValue: unknown,
+    dataValue: any,
     schema: DataSchema,
     parameters?: { [key: string]: string }
   ): Buffer {
-    console.log(
-      "valueToBytes:\n with dataValue:" +
-        dataValue +
-        "\nschema:" +
-        schema +
-        "\nparameters:" +
-        parameters
-    );
+    let hexString;
 
-    let body = "20";
-
-    return Buffer.from(body, "utf-8");
+    switch (schema.type) {
+      case "integer":
+        // Convert to hexstring
+        hexString = dataValue.toString(16);
+      case "string":
+        hexString = dataValue;
+    }
+    return Buffer.from(hexString, "utf-8");
   }
 }

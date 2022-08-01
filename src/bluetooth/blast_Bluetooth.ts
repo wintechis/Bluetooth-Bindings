@@ -31,7 +31,6 @@ export const read = async function (
     characteristicUUID
   );
   try {
-    //const thingsLog = getThingsLog();
     console.debug(
       "[binding-Bluetooth]",
       `Invoke ReadValue on characteristic ${characteristicUUID}` +
@@ -68,7 +67,7 @@ export const read = async function (
  * @return {Promise} representation of the complete request with response.
  * @public
  */
-const write = async function (
+export const write = async function (
   id: string,
   serviceUUID: string,
   characteristicUUID: string,
@@ -129,42 +128,6 @@ const write = async function (
     console.error(error);
     throw new Error(errorMsg);
   }
-};
-
-/**
- * Writes data to Bluetooth device using the gatt protocol.
- * @param {BluetoothDevice.id} id identifier of the device to write to.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @param {string} value hex value to write.
- * @returns {Promise} representation of the complete request with response.
- */
-export const writeWithResponse = async function (
-  id: string,
-  serviceUUID: string,
-  characteristicUUID: string,
-  value: any
-) {
-  // write with response
-  write(id, serviceUUID, characteristicUUID, true, value);
-};
-
-/**
- * Writes data to Bluetooth device using the gatt protocol without response.
- * @param {BluetoothDevice.id} id identifier of the device to write to.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @param {string} value hex value to write.
- * @returns {Promise<void>} A Promise to void.
- */
-export const writeWithoutResponse = async function (
-  id: string,
-  serviceUUID: string,
-  characteristicUUID: string,
-  value: any
-) {
-  // write without response
-  write(id, serviceUUID, characteristicUUID, false, value);
 };
 
 /**

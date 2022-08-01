@@ -6,8 +6,7 @@ import { Readable } from "stream";
 
 import {
   read,
-  writeWithResponse,
-  writeWithoutResponse,
+  write
 } from "./bluetooth/blast_Bluetooth";
 import { getCharacteristic } from "./bluetooth/blast_Bluetooth_core";
 
@@ -106,10 +105,11 @@ export default class BluetoothClient implements ProtocolClient {
           "[binding-Bluetooth]",
           `invoking writeWithResponse with value ${value}`
         );
-        await writeWithResponse(
+        await write(
           deconstructedForm.deviceId,
           deconstructedForm.serviceId,
           deconstructedForm.characteristicId,
+          true,
           value
         );
         break;
@@ -118,10 +118,11 @@ export default class BluetoothClient implements ProtocolClient {
           "[binding-Bluetooth]",
           `invoking writeWithoutResponse with value ${value}`
         );
-        await writeWithoutResponse(
+        await write(
           deconstructedForm.deviceId,
           deconstructedForm.serviceId,
           deconstructedForm.characteristicId,
+          false,
           value
         );
         break;

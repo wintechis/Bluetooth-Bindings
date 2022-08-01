@@ -34,9 +34,14 @@ const td = {
       type: "integer",
       observable: false,
       readOnly: true,
+      writeOnly: false,
 
-      dataFormat: "int16",
+      signed: true, // is the data singed?
       byteOrder: "little", //or big
+      fixedByteLength: 4, // TODO: Required length in bytes, difference is padded
+      /*pattern: { // TODO: wie sieht das pattern aus das gesendet werden muss?
+
+      },*/
 
       forms: [
         {
@@ -47,24 +52,28 @@ const td = {
         },
         
       ],
-      writeOnly: false,
+      
       description: "current counter value",
     },
     incrementStepSize: {
       type: "integer",
       observable: false,
       readOnly: false,
+      writeOnly: true,
+
+      signed: true,
+      byteOrder: "little", //or big
+      fixedByteLength: 4,
+
       forms: [
         {
           href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
           contentType: "application/ble+octet-stream",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
           op: ["writeproperty"],
           "bir:methodName": "write",
         },
       ],
-      writeOnly: true,
+      
       description: "step size when increment action is invoked",
     },
   },
@@ -74,8 +83,6 @@ const td = {
         {
           href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
           contentType: "application/ble+octet-stream",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
           op: ["invokeaction"],
           "bir:methodName": "write-without-response",
         },
@@ -116,10 +123,10 @@ try {
 
     const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());
-    //await thing.writeProperty("incrementStepSize", "06");
-    //await thing.invokeAction("incrementCounter");
-    //const read2 = await thing.readProperty("counterValue");
-    //console.log("'counterValue' Property has value:", await read2.value());
+    await thing.writeProperty("incrementStepSize", "06");
+    await thing.invokeAction("incrementCounter");
+    const read2 = await thing.readProperty("counterValue");
+    console.log("'counterValue' Property has value:", await read2.value());
 
     await sleep(3000);
 

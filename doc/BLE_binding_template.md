@@ -76,6 +76,7 @@ Tested: readproperty, writeproperty, invokeaction
 ## Example Sequences of Interaction Affordances (UML)
 TODO: Create UML Sequence Diagramms
 
+## Data Schema
 
 ## Contributions
 ### How to design a WoT GATT Structure?
@@ -93,6 +94,9 @@ With this setup a there are two interaction possibilities for a client.
 
 ### Implementing BLE Bindings for Node WoT
 - Implementation in Progress.
+- BLE Library
+- BLE Codec
+- BLE Bindings
 
 
 ## Limitations

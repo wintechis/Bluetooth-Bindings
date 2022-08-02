@@ -151,7 +151,7 @@ export const getCharacteristic = async function (
     console.error(error);
     throw new Error("The device has not the specified characteristic.");
   }
-  return characteristic;
+  return Promise.resolve(characteristic);
 };
 
 /**

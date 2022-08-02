@@ -141,6 +141,7 @@ export const write = async function (
  * @param {BluetoothCharacteristicUUID} charUUID identifier of the characteristic.
  * @param {Function} handler handler to register for notifications.
  */
+/*
 export const subscribe = async function (
   id: string,
   serviceUUID: string,
@@ -173,7 +174,7 @@ export const subscribe = async function (
     console.error(`Error subscribing to Bluetooth device ${id}`);
   }
 };
-
+*/
 /**
  * Reads a Thing Description from a Bluetooth device.
  * The TD should be located in under the WoT Service.

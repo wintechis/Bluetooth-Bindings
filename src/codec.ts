@@ -39,6 +39,9 @@ export class BLEBinaryCodec implements ContentCodec {
     parameters?: { [key: string]: string }
   ): DataSchemaValue {
     let parsed;
+    console.log("BYTESTOVALUE")
+
+    console.log("SCHEMA:", schema)
 
     const length = bytes.length;
 
@@ -67,13 +70,15 @@ export class BLEBinaryCodec implements ContentCodec {
     parameters?: { [key: string]: string }
   ): Buffer {
     let hexString;
-
+    console.log("VALUETOBYTES")
     switch (schema.type) {
       case "integer":
         // Convert to hexstring
         hexString = dataValue.toString(16);
+        break;
       case "string":
         hexString = dataValue;
+        break;
     }
     return Buffer.from(hexString, "utf-8");
   }

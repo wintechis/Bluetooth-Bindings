@@ -171,6 +171,7 @@ export default class BluetoothClient implements ProtocolClient {
     error?: (error: Error) => void,
     complete?: () => void
   ): Promise<Subscription> {
+    console.log("CALLED")
     const deconstructedForm = this.deconstructForm(form);
 
     if (deconstructedForm.ble_operation !== "notify") {
@@ -207,11 +208,12 @@ export default class BluetoothClient implements ProtocolClient {
         body: body,
       };
       next(content);
+      //done()
     });
 
 
     return new Subscription(() => {
-      this.unsubscribe();
+      this.unsubscribe(characteristic);
     });
   }
 

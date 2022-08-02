@@ -9,6 +9,7 @@ import {
   write
 } from "./bluetooth/blast_Bluetooth";
 import { getCharacteristic } from "./bluetooth/blast_Bluetooth_core";
+import { doesNotMatch } from "assert";
 
 const template_map: any = {
   int8: "number",
@@ -170,9 +171,48 @@ export default class BluetoothClient implements ProtocolClient {
     error?: (error: Error) => void,
     complete?: () => void
   ): Promise<Subscription> {
-    this.subscribeToCharacteristic(form, next, error, complete);
+    const deconstructedForm = this.deconstructForm(form);
 
-    return new Subscription(() => {});
+    if (deconstructedForm.ble_operation !== "notify") {
+      throw new Error(
+        `[binding-Bluetooth] operation ${deconstructedForm.ble_operation} is not supported`
+      );
+    }
+    console.debug(
+      "[binding-Bluetooth]",
+      `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+    );
+
+    const characteristic = await getCharacteristic(
+      deconstructedForm.deviceId,
+      deconstructedForm.serviceId,
+      deconstructedForm.characteristicId
+    );
+
+    await characteristic.startNotifications();
+
+    
+    characteristic.on("valuechanged", (buffer: any) => {
+      console.log("VALUE CHANGED!!!")
+      //console.log('subscription', buffer)
+      //console.log('read', buffer, buffer.toString());
+      const array = new Uint8Array(buffer);
+      // Convert value a DataView to ReadableStream
+      let s = new Readable();
+      s.push(array);
+      s.push(null);
+      const body = ProtocolHelpers.toNodeStream(s as Readable);
+      const content = {
+        type: form.contentType || "application/ble+octet-stream",
+        body: body,
+      };
+      next(content);
+    });
+
+
+    return new Subscription(() => {
+      this.unsubscribe();
+    });
   }
 
   public async start(): Promise<void> {
@@ -200,11 +240,11 @@ export default class BluetoothClient implements ProtocolClient {
 
     if (deconstructedForm.ble_operation !== "notify") {
       throw new Error(
-        `[binding-webBluetooth] operation ${deconstructedForm.ble_operation} is not supported`
+        `[binding-Bluetooth] operation ${deconstructedForm.ble_operation} is not supported`
       );
     }
     console.debug(
-      "[binding-webBluetooth]",
+      "[binding-Bluetooth]",
       `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
     );
 
@@ -213,9 +253,10 @@ export default class BluetoothClient implements ProtocolClient {
       deconstructedForm.serviceId,
       deconstructedForm.characteristicId
     );
+
     await characteristic.startNotifications();
 
-    await new Promise<void>((done) => {
+    new Promise<void>((done) => {
       characteristic.on("valuechanged", (buffer: any) => {
         //console.log('subscription', buffer)
         //console.log('read', buffer, buffer.toString());
@@ -226,7 +267,7 @@ export default class BluetoothClient implements ProtocolClient {
         s.push(null);
         const body = ProtocolHelpers.toNodeStream(s as Readable);
         const content = {
-          type: form.contentType || "text/plain",
+          type: form.contentType || "application/ble+octet-stream",
           body: body,
         };
         next(content);
@@ -292,16 +333,11 @@ export default class BluetoothClient implements ProtocolClient {
     const expected_ble_operation =
       wot2bleOperation[deconstructedForm.operation];
 
-    // Get BLE operation type
+    // Get BLE operation type, if not provided use default
     try {
       deconstructedForm.ble_operation = form["bir:methodName"];
     } catch {
       deconstructedForm.ble_operation = expected_ble_operation;
-    }
-
-    // Check if expected operation equal to operation in td
-    if (deconstructedForm.ble_operation != expected_ble_operation) {
-      throw new Error("op and bir:methodName do not match!");
     }
 
     deconstructedForm.expectedData = undefined;

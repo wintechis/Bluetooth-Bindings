@@ -8,6 +8,7 @@ const { bluetooth, destroy } = createBluetooth();
 
 const connected_devices = [] as any;
 const connected_macs = [] as any;
+const connected_gattserver = [] as any;
 
 /**
  * Returns a paired bluetooth device by their id.
@@ -61,16 +62,20 @@ const connect = async function (id: string) {
         `Device ${id} already connected`,
         "Bluetooth"
       );
-      return connected_devices[connected_macs.indexOf(id)];
+
+      return connected_gattserver[connected_macs.indexOf(id)];
     } else {
       const device = (await getDeviceById(id)) as any;
       console.debug("[binding-Bluetooth]", `Connecting to ${id}`, "Bluetooth");
       await device.connect();
-      connected_devices.push(device);
+      const gattServer = await device.gatt();
       connected_macs.push(id);
-      return device;
+      connected_devices.push(device);
+      connected_gattserver.push(gattServer);
+      return gattServer;
     }
   } catch (error) {
+    console.log(error)
     throw Error(`Error connecting to Bluetooth device ${id}`);
   }
 };
@@ -83,18 +88,10 @@ const connect = async function (id: string) {
  * @returns {Promise<BluetoothRemoteGATT>} A BluetoothRemoteGATTService object.
  */
 const getPrimaryService = async function (id: string, serviceUUID: string) {
-  const device = await connect(id);
-  const gattServer = await device.gatt();
+  const gattServer = await connect(id);
 
   let service;
   try {
-    console.debug(
-      "[binding-Bluetooth]",
-      `Getting primary service ${serviceUUID}`,
-      "Bluetooth",
-      id
-    );
-
     service = await gattServer.getPrimaryService(serviceUUID);
 
     console.debug(
@@ -132,12 +129,6 @@ export const getCharacteristic = async function (
   }
   let characteristic;
   try {
-    console.debug(
-      "[binding-Bluetooth]",
-      `Getting characteristic ${characteristicUUID} from service ${serviceUUID}`,
-      "Bluetooth",
-      id
-    );
     characteristic = await service.getCharacteristic(
       characteristicUUID.toLowerCase()
     );
@@ -197,6 +188,7 @@ export const tearDown = async function () {
   // Remove all items from connected_devices
   connected_devices.length = 0;
   connected_macs.length = 0;
+  connected_gattserver.length = 0;
 };
 
 /**

@@ -105,7 +105,6 @@ const td = {
   },
   events: {
     valueChange: {
-
       data: {
         type: "string",
         readOnly: false,
@@ -132,40 +131,47 @@ try {
   servient.start().then(async (WoT) => {
     let thing = await WoT.consume(td);
 
-    
-    const sub1 = await thing.subscribeEvent("valueChange", async (data) => {
-      console.log("CounterChange event occured! New value is:", await data.value());
-    });
-    
-    console.log("WAITING START")
-
-    await sleep(3000);
-    console.log("WAITING FINISH")
-    
-    await thing.invokeAction("incrementCounter");
-  
-    await sleep(3000);
-
-    await sub1.unsubscribeEvent()
-    console.log("WAITING START 22")
-
-    await sleep(3000);
-    console.log("WAITING FINISH 22")
-    
-    await thing.invokeAction("incrementCounter");
-  
-    await sleep(3000);
-    /*
+    // Read current counter value
     const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());
-    /*
-    await thing.writeProperty("incrementStepSize", "06");
+    await sleep(250);
+    // Subscribe to "CounterChange" Event
+
+    const sub1 = await thing.subscribeEvent("valueChange", async (data) => {
+      console.log(
+        "CounterChange event occured! New value is:",
+        await data.value()
+      );
+    });
+    await sleep(250);
+    // Increment Counter -> Triggers Event
     await thing.invokeAction("incrementCounter");
+
+    await sleep(250);
+
+    // Increment step size to 6
+    await thing.writeProperty("incrementStepSize", "06");
+
+    // Increment counter again
+    await thing.invokeAction("incrementCounter");
+
+    await sleep(250);
+
+    // Unsubscribe from Event
+    await sub1.unsubscribeEvent();
+
+    await sleep(250);
+
+    // Increment Counter -> No Event Triggered
+    await thing.invokeAction("incrementCounter");
+
+    await sleep(250);
+
+    // Read new counter value
     const read2 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read2.value());
-    */
-    await sleep(3000);
-
+    await sleep(250);
+    // Disconnect from device
     await blast_Bluetooth_core.closeBluetooth();
   });
 } catch (err) {

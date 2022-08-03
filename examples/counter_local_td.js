@@ -67,7 +67,7 @@ const td = {
       writeOnly: true,
 
       signed: true,
-      byteOrder: "little", //or big
+      byteOrder: "little",
       fixedByteLength: 4,
 
       forms: [
@@ -110,9 +110,6 @@ const td = {
         type: "string",
         readOnly: false,
         writeOnly: false,
-        signed: true,
-        byteOrder: "little", //or big
-        fixedByteLength: 4,
       },
 
       forms: [
@@ -137,8 +134,7 @@ try {
 
     
     await thing.subscribeEvent("valueChange", async (data) => {
-      console.log("SDGKLJLSKDJGKL", data )
-      console.log("CounterChange event Occured!!:", await data.value());
+      console.log("CounterChange event occured! New value is:", await data.value());
     });
     
     console.log("WAITING START")

@@ -20,7 +20,7 @@ import {
  * @return {Promise} representation of the complete request with response.
  * @public
  */
-const read = async function (
+export const read = async function (
   id: string,
   serviceUUID: string,
   characteristicUUID: string
@@ -31,7 +31,6 @@ const read = async function (
     characteristicUUID
   );
   try {
-    //const thingsLog = getThingsLog();
     console.debug(
       "[binding-Bluetooth]",
       `Invoke ReadValue on characteristic ${characteristicUUID}` +
@@ -39,59 +38,19 @@ const read = async function (
       "Bluetooth",
       id
     );
-    const value: any = await characteristic.readValue();
+    const buffer: any = await characteristic.readValue();
     console.debug(
       "[binding-Bluetooth]",
       `Finished ReadValue on characteristic ${characteristicUUID}` +
-        ` from service ${serviceUUID} - value: ${value.toString()}`,
+        ` from service ${serviceUUID} - value: ${buffer.toString()}`,
       "Bluetooth",
       id
     );
-    return value;
+    return buffer;
   } catch (error) {
     console.error(error);
     throw new Error(`Error reading from Bluetooth device ${id}`);
   }
-};
-
-/**
- * Reads an integer characteristic value from a Bluetooth device.
- * @param {BluetoothDevice.id} id identifier of the device to read from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @returns {string} the value of the characteristic.
- * @public
- */
-export const readInt = async function (
-  id: string,
-  serviceUUID: string,
-  characteristicUUID: string
-) {
-  let buffer = await read(id, serviceUUID, characteristicUUID);
-  const length = buffer.length;
-  const result = buffer.readIntLE(0, length);
-
-  return result;
-};
-
-/**
- * Reads an unsigned integer characteristic value from a Bluetooth device.
- * @param {BluetoothDevice.id} id identifier of the device to read from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @returns {string} the value of the characteristic.
- * @public
- */
-export const readUInt = async function (
-  id: string,
-  serviceUUID: string,
-  characteristicUUID: string
-) {
-  let buffer = await read(id, serviceUUID, characteristicUUID);
-  const length = buffer.length;
-  const result = buffer.readUIntLE(0, length);
-
-  return result;
 };
 
 /**
@@ -108,7 +67,7 @@ export const readUInt = async function (
  * @return {Promise} representation of the complete request with response.
  * @public
  */
-const write = async function (
+export const write = async function (
   id: string,
   serviceUUID: string,
   characteristicUUID: string,
@@ -172,42 +131,6 @@ const write = async function (
 };
 
 /**
- * Writes data to Bluetooth device using the gatt protocol.
- * @param {BluetoothDevice.id} id identifier of the device to write to.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @param {string} value hex value to write.
- * @returns {Promise} representation of the complete request with response.
- */
-export const writeWithResponse = async function (
-  id: string,
-  serviceUUID: string,
-  characteristicUUID: string,
-  value: any
-) {
-  // write with response
-  write(id, serviceUUID, characteristicUUID, true, value);
-};
-
-/**
- * Writes data to Bluetooth device using the gatt protocol without response.
- * @param {BluetoothDevice.id} id identifier of the device to write to.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @param {string} value hex value to write.
- * @returns {Promise<void>} A Promise to void.
- */
-export const writeWithoutResponse = async function (
-  id: string,
-  serviceUUID: string,
-  characteristicUUID: string,
-  value: any
-) {
-  // write without response
-  write(id, serviceUUID, characteristicUUID, false, value);
-};
-
-/**
  * Subscription functionality
  */
 
@@ -218,6 +141,7 @@ export const writeWithoutResponse = async function (
  * @param {BluetoothCharacteristicUUID} charUUID identifier of the characteristic.
  * @param {Function} handler handler to register for notifications.
  */
+/*
 export const subscribe = async function (
   id: string,
   serviceUUID: string,
@@ -250,7 +174,7 @@ export const subscribe = async function (
     console.error(`Error subscribing to Bluetooth device ${id}`);
   }
 };
-
+*/
 /**
  * Reads a Thing Description from a Bluetooth device.
  * The TD should be located in under the WoT Service.

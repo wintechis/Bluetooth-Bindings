@@ -1,8 +1,9 @@
 // client.js
 // Required steps to create a servient for a client
 const { Servient, Helpers } = require("@node-wot/core");
+const { read } = require("fs");
 const Bluetooth_client_factory = require("../dist/src/Bluetooth-client-factory");
-const blast_Bluetooth_core = require("../dist/src/blast_Bluetooth_core");
+const blast_Bluetooth_core = require("../dist/src/bluetooth/blast_Bluetooth_core");
 
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
@@ -10,6 +11,8 @@ servient.addClientFactory(new Bluetooth_client_factory.default());
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+const MAC = "5CF370A08703";
 
 const td = {
   "@context": [
@@ -34,32 +37,51 @@ const td = {
       type: "integer",
       observable: false,
       readOnly: true,
+      writeOnly: false,
+
+      signed: true, // is the data singed?
+      byteOrder: "little", //or big
+      fixedByteLength: 4, // TODO: Required length in bytes, difference is padded
+      /*pattern: { // TODO: wie sieht das pattern aus das gesendet werden muss?
+
+      },*/
+
       forms: [
         {
-          href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
-          "bir:receivedDataformat": "int16",
-          "bir:expectedDataformat": "None",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
           op: ["readproperty"],
           "bir:methodName": "read",
+          contentType: "application/ble+octet-stream",
         },
       ],
-      writeOnly: false,
+
       description: "current counter value",
     },
     incrementStepSize: {
       type: "integer",
       observable: false,
       readOnly: false,
+      writeOnly: true,
+
+      signed: true,
+      byteOrder: "little",
+      fixedByteLength: 4,
+
       forms: [
         {
-          href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
           op: ["writeproperty"],
           "bir:methodName": "write",
         },
       ],
-      writeOnly: true,
+
       description: "step size when increment action is invoked",
     },
   },
@@ -67,9 +89,11 @@ const td = {
     incrementCounter: {
       forms: [
         {
-          href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
           op: ["invokeaction"],
           "bir:methodName": "write-without-response",
         },
@@ -81,12 +105,20 @@ const td = {
   },
   events: {
     valueChange: {
+      data: {
+        type: "string",
+        readOnly: false,
+        writeOnly: false,
+      },
+
       forms: [
         {
-          href: "gatt://5CF370A08703/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
-          op: ["subscribeevent"],
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
+          op: ["subscribeevent", "unsubscribeevent"],
           "bir:methodName": "notify",
         },
       ],
@@ -99,24 +131,47 @@ try {
   servient.start().then(async (WoT) => {
     let thing = await WoT.consume(td);
 
-    thing.subscribeEvent("valueChange", async (data) => {
-      // Here we are simply logging the message when the event is emitted
-      // But, of course, could have a much more sophisticated handler
-      console.log("CounterChange event Occured!!:", await data.value());
-    });
-
-    await sleep(10000);
-    await thing.invokeAction("incrementCounter");
-
+    // Read current counter value
     const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());
-    await thing.writeProperty("incrementStepSize", "06");
+    await sleep(250);
+    // Subscribe to "CounterChange" Event
+
+    const sub1 = await thing.subscribeEvent("valueChange", async (data) => {
+      console.log(
+        "CounterChange event occured! New value is:",
+        await data.value()
+      );
+    });
+    await sleep(250);
+    // Increment Counter -> Triggers Event
     await thing.invokeAction("incrementCounter");
+
+    await sleep(250);
+
+    // Increment step size to 6
+    await thing.writeProperty("incrementStepSize", "06");
+
+    // Increment counter again
+    await thing.invokeAction("incrementCounter");
+
+    await sleep(250);
+
+    // Unsubscribe from Event
+    await sub1.unsubscribeEvent();
+
+    await sleep(250);
+
+    // Increment Counter -> No Event Triggered
+    await thing.invokeAction("incrementCounter");
+
+    await sleep(250);
+
+    // Read new counter value
     const read2 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read2.value());
-
-    await sleep(3000);
-
+    await sleep(250);
+    // Disconnect from device
     await blast_Bluetooth_core.closeBluetooth();
   });
 } catch (err) {

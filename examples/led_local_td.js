@@ -30,11 +30,11 @@ const td = {
       type: "integer",
       observable: false,
       readOnly: true,
+      signed: false,
+      byteOrder: "little",
       forms: [
         {
           href: "gatt://A4DD70903FAE/D65D0396-0000-4381-9985-653653CE831F/D65D0396-0001-4381-9985-653653CE831F",
-          "bir:receivedDataformat": "int8",
-          "bir:expectedDataformat": "None",
           op: ["readproperty"],
           "htv:methodName": "read",
         },
@@ -49,8 +49,6 @@ const td = {
       forms: [
         {
           href: "gatt://A4DD70903FAE/D65D0396-0000-4381-9985-653653CE831F/D65D0396-0001-4381-9985-653653CE831F",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
           op: ["writeproperty"],
           "htv:methodName": "write",
         },
@@ -64,8 +62,6 @@ const td = {
       forms: [
         {
           href: "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
           op: ["invokeaction"],
           "htv:methodName": "write-without-response",
         },
@@ -77,11 +73,15 @@ const td = {
   },
   events: {
     valueChange: {
+      data: {
+        type: "string",
+        readOnly: false,
+        writeOnly: false,
+      },
+
       forms: [
         {
           href: "gatt://3800258ab3bb/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
-          "bir:receivedDataformat": "None",
-          "bir:expectedDataformat": "None",
           op: ["subscribeevent", "unsubscribeevent"],
           "htv:methodName": "notify",
         },
@@ -104,7 +104,7 @@ try {
       await thing.writeProperty("changeColorState", "00");
       const read2 = await thing.readProperty("readColor");
       console.log("'readColor' Property has value:", await read2.value());
-      await blast_Bluetooth.tearDown();
+      await blast_Bluetooth.closeBluetooth();
     });
   });
 } catch (err) {

@@ -119,7 +119,7 @@ const td = {
             MAC +
             "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
           contentType: "application/ble+octet-stream",
-          op: ["subscribeevent"],
+          op: ["subscribeevent", "unsubscribeevent"],
           "bir:methodName": "notify",
         },
       ],
@@ -133,7 +133,7 @@ try {
     let thing = await WoT.consume(td);
 
     
-    await thing.subscribeEvent("valueChange", async (data) => {
+    const sub1 = await thing.subscribeEvent("valueChange", async (data) => {
       console.log("CounterChange event occured! New value is:", await data.value());
     });
     
@@ -143,6 +143,18 @@ try {
     console.log("WAITING FINISH")
     
     await thing.invokeAction("incrementCounter");
+  
+    await sleep(3000);
+
+    await sub1.unsubscribeEvent()
+    console.log("WAITING START 22")
+
+    await sleep(3000);
+    console.log("WAITING FINISH 22")
+    
+    await thing.invokeAction("incrementCounter");
+  
+    await sleep(3000);
     /*
     const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());

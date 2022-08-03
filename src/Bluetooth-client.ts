@@ -4,12 +4,8 @@ import { BluetoothForm } from "./Bluetooth.js";
 import { Subscription } from "rxjs";
 import { Readable } from "stream";
 
-import {
-  read,
-  write
-} from "./bluetooth/blast_Bluetooth";
+import { read, write } from "./bluetooth/blast_Bluetooth";
 import { getCharacteristic } from "./bluetooth/blast_Bluetooth_core";
-import { doesNotMatch } from "assert";
 
 const template_map: any = {
   int8: "number",
@@ -158,8 +154,23 @@ export default class BluetoothClient implements ProtocolClient {
     });
   }
 
-  public unlinkResource(form: Form): Promise<void> {
-    throw new Error("not implemented");
+  public async unlinkResource(form: BluetoothForm): Promise<void> {
+    const deconstructedForm = this.deconstructForm(form);
+
+    console.debug(
+      "[binding-Bluetooth]",
+      `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+    );
+
+    const characteristic = await getCharacteristic(
+      deconstructedForm.deviceId,
+      deconstructedForm.serviceId,
+      deconstructedForm.characteristicId
+    );
+
+    await characteristic.stopNotifications();
+
+    //throw new Error("not implemented");
   }
 
   /**
@@ -191,7 +202,6 @@ export default class BluetoothClient implements ProtocolClient {
 
     await characteristic.startNotifications();
 
-    
     characteristic.on("valuechanged", (buffer: any) => {
       console.debug(
         "[binding-Bluetooth]",
@@ -210,10 +220,7 @@ export default class BluetoothClient implements ProtocolClient {
       next(content);
     });
 
-
-    return new Subscription(() => {
-      this.unsubscribe(characteristic);
-    });
+    return new Subscription(() => {});
   }
 
   public async start(): Promise<void> {
@@ -229,10 +236,6 @@ export default class BluetoothClient implements ProtocolClient {
     credentials?: unknown
   ): boolean {
     return false;
-  }
-
-  private async unsubscribe(characteristic: any) {
-    await characteristic.stopNotifications();
   }
 
   /**

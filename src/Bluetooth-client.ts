@@ -171,7 +171,6 @@ export default class BluetoothClient implements ProtocolClient {
     error?: (error: Error) => void,
     complete?: () => void
   ): Promise<Subscription> {
-    console.log("CALLED")
     const deconstructedForm = this.deconstructForm(form);
 
     if (deconstructedForm.ble_operation !== "notify") {
@@ -194,9 +193,10 @@ export default class BluetoothClient implements ProtocolClient {
 
     
     characteristic.on("valuechanged", (buffer: any) => {
-      console.log("VALUE CHANGED!!!")
-      //console.log('subscription', buffer)
-      //console.log('read', buffer, buffer.toString());
+      console.debug(
+        "[binding-Bluetooth]",
+        `event occured on characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+      );
       const array = new Uint8Array(buffer);
       // Convert value a DataView to ReadableStream
       let s = new Readable();
@@ -208,7 +208,6 @@ export default class BluetoothClient implements ProtocolClient {
         body: body,
       };
       next(content);
-      //done()
     });
 
 
@@ -230,56 +229,6 @@ export default class BluetoothClient implements ProtocolClient {
     credentials?: unknown
   ): boolean {
     return false;
-  }
-
-  private async subscribeToCharacteristic(
-    form: BluetoothForm,
-    next: (content: Content) => void,
-    error?: (error: Error) => void,
-    complete?: () => void
-  ): Promise<Subscription> {
-    const deconstructedForm = this.deconstructForm(form);
-
-    if (deconstructedForm.ble_operation !== "notify") {
-      throw new Error(
-        `[binding-Bluetooth] operation ${deconstructedForm.ble_operation} is not supported`
-      );
-    }
-    console.debug(
-      "[binding-Bluetooth]",
-      `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
-    );
-
-    const characteristic = await getCharacteristic(
-      deconstructedForm.deviceId,
-      deconstructedForm.serviceId,
-      deconstructedForm.characteristicId
-    );
-
-    await characteristic.startNotifications();
-
-    new Promise<void>((done) => {
-      characteristic.on("valuechanged", (buffer: any) => {
-        //console.log('subscription', buffer)
-        //console.log('read', buffer, buffer.toString());
-        const array = new Uint8Array(buffer);
-        // Convert value a DataView to ReadableStream
-        let s = new Readable();
-        s.push(array);
-        s.push(null);
-        const body = ProtocolHelpers.toNodeStream(s as Readable);
-        const content = {
-          type: form.contentType || "application/ble+octet-stream",
-          body: body,
-        };
-        next(content);
-        done();
-      });
-    });
-
-    return new Subscription(() => {
-      this.unsubscribe(characteristic);
-    });
   }
 
   private async unsubscribe(characteristic: any) {

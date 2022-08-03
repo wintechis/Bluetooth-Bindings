@@ -1,6 +1,7 @@
 // client.js
 // Required steps to create a servient for a client
 const { Servient, Helpers } = require("@node-wot/core");
+const { read } = require("fs");
 const Bluetooth_client_factory = require("../dist/src/Bluetooth-client-factory");
 const blast_Bluetooth_core = require("../dist/src/bluetooth/blast_Bluetooth_core");
 
@@ -10,6 +11,8 @@ servient.addClientFactory(new Bluetooth_client_factory.default());
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+const MAC = "5CF370A08703";
 
 const td = {
   "@context": [
@@ -45,14 +48,16 @@ const td = {
 
       forms: [
         {
-          href: "gatt://3800258AB3BB/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0001-4e89-8476-e0b2dad3179b",
           op: ["readproperty"],
           "bir:methodName": "read",
-          contentType: "application/ble+octet-stream"
+          contentType: "application/ble+octet-stream",
         },
-        
       ],
-      
+
       description: "current counter value",
     },
     incrementStepSize: {
@@ -67,13 +72,16 @@ const td = {
 
       forms: [
         {
-          href: "gatt://3800258AB3BB/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-f0db-0002-8476-e0b2dad3179b",
           contentType: "application/ble+octet-stream",
           op: ["writeproperty"],
           "bir:methodName": "write",
         },
       ],
-      
+
       description: "step size when increment action is invoked",
     },
   },
@@ -81,7 +89,10 @@ const td = {
     incrementCounter: {
       forms: [
         {
-          href: "gatt://3800258AB3BB/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0010-4e89-8476-e0b2dad3179b",
           contentType: "application/ble+octet-stream",
           op: ["invokeaction"],
           "bir:methodName": "write-without-response",
@@ -95,13 +106,22 @@ const td = {
   events: {
     valueChange: {
 
-      signed: true,
-      byteOrder: "little", //or big
-      fixedByteLength: 4,
+      data: {
+        type: "string",
+        readOnly: false,
+        writeOnly: false,
+        signed: true,
+        byteOrder: "little", //or big
+        fixedByteLength: 4,
+      },
 
       forms: [
         {
-          href: "gatt://3800258AB3BB/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
+          href:
+            "gatt://" +
+            MAC +
+            "/1fc8f811-0000-4e89-8476-e0b2dad3179b/1fc8f811-0100-4e89-8476-e0b2dad3179b",
+          contentType: "application/ble+octet-stream",
           op: ["subscribeevent"],
           "bir:methodName": "notify",
         },
@@ -114,10 +134,10 @@ const td = {
 try {
   servient.start().then(async (WoT) => {
     let thing = await WoT.consume(td);
+
     
     await thing.subscribeEvent("valueChange", async (data) => {
-      // Here we are simply logging the message when the event is emitted
-      // But, of course, could have a much more sophisticated handler
+      console.log("SDGKLJLSKDJGKL", data )
       console.log("CounterChange event Occured!!:", await data.value());
     });
     
@@ -125,17 +145,19 @@ try {
 
     await sleep(3000);
     console.log("WAITING FINISH")
+    
     await thing.invokeAction("incrementCounter");
-
-    /*const read1 = await thing.readProperty("counterValue");
+    /*
+    const read1 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read1.value());
+    /*
     await thing.writeProperty("incrementStepSize", "06");
     await thing.invokeAction("incrementCounter");
     const read2 = await thing.readProperty("counterValue");
     console.log("'counterValue' Property has value:", await read2.value());
     */
     await sleep(3000);
-    
+
     await blast_Bluetooth_core.closeBluetooth();
   });
 } catch (err) {

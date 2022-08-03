@@ -31,34 +31,34 @@ export class BLEBinaryCodec implements ContentCodec {
     return "application/ble+octet-stream";
   }
 
-  // TODO: schema validation
-
   bytesToValue(
     bytes: Buffer,
     schema: DataSchema,
     parameters?: { [key: string]: string }
   ): DataSchemaValue {
     let parsed;
-    console.log("BYTESTOVALUE")
 
-    console.log("SCHEMA:", schema)
+    if (schema.type == "integer") {
+      const length = bytes.length;
 
-    const length = bytes.length;
-
-    if (schema.byteOrder == "little") {
-      if (schema.signed) {
-        parsed = bytes.readIntLE(0, length);
+      if (schema.byteOrder == "little") {
+        if (schema.signed) {
+          parsed = bytes.readIntLE(0, length);
+        } else {
+          parsed = bytes.readUIntLE(0, length);
+        }
+      } else if (schema.byteOrder == "big") {
+        if (schema.signed) {
+          parsed = bytes.readIntBE(0, length);
+        } else {
+          parsed = bytes.readUIntBE(0, length);
+        }
       } else {
-        parsed = bytes.readUIntLE(0, length);
+        throw new Error("Byteorder not availavle! Select 'big' or 'little'.");
       }
-    } else if (schema.byteOrder == "big") {
-      if (schema.signed) {
-        parsed = bytes.readIntBE(0, length);
-      } else {
-        parsed = bytes.readUIntBE(0, length);
-      }
-    } else {
-      throw new Error("Byteorder not availavle! Select 'big' or 'little'.");
+    }
+    if (schema.type == "string"){
+      parsed = bytes.toString()
     }
 
     return parsed;
@@ -70,7 +70,7 @@ export class BLEBinaryCodec implements ContentCodec {
     parameters?: { [key: string]: string }
   ): Buffer {
     let hexString;
-    console.log("VALUETOBYTES")
+    
     switch (schema.type) {
       case "integer":
         // Convert to hexstring

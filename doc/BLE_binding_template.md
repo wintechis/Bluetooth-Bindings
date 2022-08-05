@@ -1,5 +1,5 @@
 ## Introduction
-This document is inspired by the [HTTP Binding Template](https://w3c.github.io/wot-binding-templates/bindings/protocols/http/index.html) from w3c. It attempts to create a Binding Template for the Bluetooth protocoll.
+This document is inspired by the [HTTP Binding Template](https://w3c.github.io/wot-binding-templates/bindings/protocols/http/index.html) and [Modbus Binding Template](https://w3c.github.io/wot-binding-templates/bindings/protocols/modbus/index.html) from w3c. It attempts to create a Binding Template for the Bluetooth protocoll.
 
 ## Status of This Document
 This section describes the status of this document at the time of its publication.
@@ -23,21 +23,28 @@ with the following meaning:
     <service> is the GATT service containing the characteristic
     <characteristic> is the GATT characteristic to interact with
 
-## BLE Vocabulary
+## Bluetooth Vocabulary
 
 The http Vocablary is based on the http ontology with prefix "htv". Similar to this we want to create an ontology for bluetooth. The name should be "bluetooth in rdf" with prefix "bir"
 
 ### BLE Vocabulary Terms
+This section describes the vocabulary used in the Bluetooth protocol. 
+
+The prefered prefix for the ontology is <code>bt</code>.
+
+#### Form terms
 
 | Vocabulary term | Description | Assignment | Type |
 | --- | --- | --- | --- |
-| bir:methodName |BLE method name (Literal) | required | string |
-| bir:receivedDataFormat | Dataformat of received binary buffer (Literal). TODO: Can be read from descriptor? | required | string |
-| bir:expectedDataFormat | Dataformat of sent binary buffer (Literal). TODO Is this still needed if "bir:expectedData" exists? | required | string |
-| bir:expectedData | Container with form and expected parameter. TODO How to represent order in RDF? [Check here](http://infolab.stanford.edu/~stefan/daml/order.html)| optional | string? |
-| bir:hasForm | String Template with expected parameter | required with bir:expectedData | ??? |
-| bir:hasParameter | String with expected parameter and datatype | required with bir:expectedData | ??? |
+| bt:methodName | BLE method name (Literal) | required | string |
 
+#### Metadata?
+| Vocabulary term | Description | Assignment | Type |
+| --- | --- | --- | --- |
+| bt:signed | Is the binary data singed? | required | boolean |
+| bt:byteOrder | The byte order of the binary data | required | string |
+| bt:fixedByteLength | The fix byte length to be sent to the device. Data is padded until size fits | optional | integer |
+| bt:pattern | The byte pattern of the binary data | optional | string |
 
 ##### Allowed Dataformats
 Allowed Dataformats for <code>bir:receivedDataFormat</code> and <code>bir:expectedDataFormat</code>. This are defined in the bluetooth desciptor.
@@ -68,7 +75,7 @@ Allowed Dataformats for <code>bir:receivedDataFormat</code> and <code>bir:expect
 | " | stringUTF16 |
 
 
-### BLE Default Vocabulary Terms
+### Mappings
 Overall mapping is:
 - GET -> read
 - PUT -> write / write-without-response
@@ -79,26 +86,31 @@ Q: Is write operation on a write-without-response interface allowed? And vice ve
 -> Not possible according to Bluetooth Spec [3.4.5.]. Because write requires an answer from the server (either success or error). 
 Because of that PUT and POST need to support both write and write-without-response. Operation is depending on server implementation
 
+#### Default mappings
 In the following table "write" can be replaced with "write-without-response" for reasons stated above.
+The default mappings of HTTP are compared to the default Bluetooth mappings.
 
-| op value | Default Binding HTTP | Default Binding BLE |
+| op value | Default Binding HTTP | Default Binding Bluetooth |
 | --- | --- | --- |
-|  readproperty | "htv:methodName": "GET" | "bir:methodName": "read" | 
-| writeproperty | "htv:methodName": "PUT" | "bir:methodName": "write" | 
-| invokeaction | "htv:methodName": "POST" | "bir:methodName": "write" | 
-| readallproperties | "htv:methodName": "GET" | "bir:methodName": "read" | 
-| writeallproperties | "htv:methodName": "PUT" | "bir:methodName": "write" | 
-| readmultipleproperties | "htv:methodName": "GET" | "bir:methodName": "read" | 
-| writemultipleproperties | "htv:methodName": "PUT" | "bir:methodName": "write" | 
-| subscribeevent | --- | "bir:methodName": "notify" |
-| unsubscribeevent | --- | "bir:methodName": ? |
+| readproperty | "htv:methodName": "GET" | "bt:methodName": "read" | 
+| writeproperty | "htv:methodName": "PUT" | "bt:methodName": "write" | 
+| invokeaction | "htv:methodName": "POST" | "bt:methodName": "write" | 
+| readallproperties* | "htv:methodName": "GET" | "bt:methodName": "read" | 
+| writeallproperties* | "htv:methodName": "PUT" | "bt:methodName": "write" | 
+| readmultipleproperties* | "htv:methodName": "GET" | "bt:methodName": "read" | 
+| writemultipleproperties* | "htv:methodName": "PUT" | "bt:methodName": "write" | 
+| subscribeevent | --- | "bt:methodName": "notify" |
+| unsubscribeevent | --- | "bt:methodName": ? |
 
-Tested: readproperty, writeproperty, invokeaction
+Operations markted with a * are not implemented yet
 
 ## Example Sequences of Interaction Affordances (UML)
 TODO: Create UML Sequence Diagramms
 
 ## Data Schema
+
+## Examples
+This section will present a set of examples about how the terms defined in this document can be used to describe a Bluetooth interface in a WoT Thing Description. 
 
 ## Contributions
 ### How to design a WoT GATT Structure?
@@ -124,6 +136,6 @@ With this setup a there are two interaction possibilities for a client.
 ## Limitations
 - Need to stay connected to receive notifications -> only limited number of devcies can connect at the same time
 ## TODOs:
-- Implement unsubscribe
+- Test octect-stream vs own implementation in ble devices
 - implement read descriptor
 - Test connect to multiple devices

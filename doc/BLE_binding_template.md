@@ -1,5 +1,27 @@
 ## Introduction
-This document is inspired by the [HTTP Binding Template](https://w3c.github.io/wot-binding-templates/bindings/protocols/http/index.html) from w3c It attempts to create a Bluetooth Binding Template.
+This document is inspired by the [HTTP Binding Template](https://w3c.github.io/wot-binding-templates/bindings/protocols/http/index.html) from w3c. It attempts to create a Binding Template for the Bluetooth protocoll.
+
+## Status of This Document
+This section describes the status of this document at the time of its publication.
+This document is a work in progress.
+
+This document was published by the Fraunhofer IoT Working Group as an Editor's Draft. 
+
+This is a draft document and may be updated, replaced or obsoleted by other documents at any time. It is inappropriate to cite this document as other than work in progress. 
+
+## URL format
+There has been an attempt to standardize URI schemas for [Bluetooth back in 2016 by the ietf](https://datatracker.ietf.org/doc/html/draft-bormann-t2trg-ble-uri-00).  Based on this proposed standard we developed an URI schema to describe the Bluetooth interface. <br>
+It has the following structure:
+
+```
+gatt://<MAC>/<service>/<characteristic>
+```
+  
+with the following meaning:
+
+    <MAC> is the MAC address of the bluetooth device
+    <service> is the GATT service containing the characteristic
+    <characteristic> is the GATT characteristic to interact with
 
 ## BLE Vocabulary
 

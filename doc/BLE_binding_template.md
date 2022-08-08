@@ -25,7 +25,7 @@ with the following meaning:
 
 ## Bluetooth Vocabulary
 
-The http Vocablary is based on the http ontology with prefix "htv". Similar to this we want to create an ontology for bluetooth. The name should be "bluetooth in rdf" with prefix "bir"
+The http Vocablary is based on the http ontology with prefix "htv". Similar to this we want to create an ontology for bluetooth.
 
 ### BLE Vocabulary Terms
 This section describes the vocabulary used in the Bluetooth protocol. 

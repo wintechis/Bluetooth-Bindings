@@ -54,6 +54,7 @@ The prefered prefix for the ontology is <code>bt</code>.
 | bt:byteOrder | The byte order of the binary data | required | string |
 | bt:fixedByteLength | The fix byte length to be sent to the device. Data is padded until size fits | optional | integer |
 | bt:pattern | The byte pattern of the binary data | optional | string |
+| bt:variable | Description of the variables in bt:pattern | required if bt:pattern is used | ? |
 
 ##### Allowed Dataformats
 Allowed Dataformats for <code>bir:receivedDataFormat</code> and <code>bir:expectedDataFormat</code>. This are defined in the bluetooth desciptor.
@@ -141,10 +142,14 @@ With this setup a there are two interaction possibilities for a client.
 - BLE Codec
 - BLE Bindings
 
+### Comparision between staying connected and reconnect each time
+- How many devices can connect at once and stay connected?
+- How long takes a sample programm when reconnection compared to staying connected?
+- In what use cases is what setting better? -> introduce global flag to determine what to do!!
 
 ## Limitations
 - Need to stay connected to receive notifications -> only limited number of devcies can connect at the same time
 ## TODOs:
-- Test octect-stream vs own implementation in ble devices
-- implement read descriptor
+- implement read descriptor?
 - Test connect to multiple devices
+- create td for more GATT devices!

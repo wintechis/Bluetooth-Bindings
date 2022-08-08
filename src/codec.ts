@@ -1,5 +1,6 @@
 import { ContentCodec } from "@node-wot/core";
 import { DataSchema, DataSchemaValue } from "wot-typescript-definitions";
+const UriTemplate = require("uritemplate");
 
 const handler_map: any = {
   int8: "readInt",
@@ -54,11 +55,11 @@ export class BLEBinaryCodec implements ContentCodec {
           parsed = bytes.readUIntBE(0, length);
         }
       } else {
-        throw new Error("Byteorder not availavle! Select 'big' or 'little'.");
+        throw new Error("Byteorder not available! Select 'big' or 'little'.");
       }
     }
-    if (schema.type == "string"){
-      parsed = bytes.toString()
+    if (schema.type == "string") {
+      parsed = bytes.toString();
     }
 
     return parsed;
@@ -70,7 +71,15 @@ export class BLEBinaryCodec implements ContentCodec {
     parameters?: { [key: string]: string }
   ): Buffer {
     let hexString;
-    
+
+    // Check if pattern is provieded
+    if (typeof schema["bt:pattern"] != "undefined") {
+      //Fill in pattern
+      const template = UriTemplate.parse(schema["bt:pattern"]);
+      // replace dataValue object with filled in pattern
+      dataValue = template.expand(dataValue);
+    }
+
     switch (schema.type) {
       case "integer":
         // Convert to hexstring

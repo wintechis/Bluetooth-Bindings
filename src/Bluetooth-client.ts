@@ -78,7 +78,6 @@ export default class BluetoothClient implements ProtocolClient {
     content: Content
   ): Promise<void> {
     const deconstructedForm = this.deconstructForm(form);
-
     let value = "";
     //Convert readableStreamToString
     if (typeof content != "undefined") {
@@ -88,11 +87,6 @@ export default class BluetoothClient implements ProtocolClient {
       }
       const buffer = Buffer.concat(chunks);
       value = new TextDecoder().decode(buffer);
-    }
-
-    // If expectedData is provided in td, use it
-    if (typeof deconstructedForm.expectedData != "undefined") {
-      value = this.fill_in_form(deconstructedForm.expectedData, value);
     }
 
     // Select what operation should be executed
@@ -244,20 +238,15 @@ export default class BluetoothClient implements ProtocolClient {
    * @returns {Object} Object containing all parameters
    */
   private deconstructForm = function (form: BluetoothForm) {
-    // See https://github.com/FreuMi/GATT_Thing/blob/main/notes/BLE_binding_template.md#ble-default-vocabulary-terms
-    const wot2bleOperation: any = {
-      readproperty: "read",
-      writeproperty: "write",
-      invokeaction: "write-without-response",
-      subscribeevent: "notify",
-    };
+
+    console.log(form)
 
     const deconstructedForm: Record<string, any> = {};
 
     // Remove gatt://
     deconstructedForm.path = form.href.split("//")[1];
 
-    // DeviceId is mac of device. Add :
+    // DeviceId is mac of device. Add ':'
     // e.g. c03c59a89106  -> c0:3c:59:a8:91:06
     deconstructedForm.deviceId = deconstructedForm.path
       .split("/")[0]
@@ -270,67 +259,12 @@ export default class BluetoothClient implements ProtocolClient {
     // Extract characteristicId
     deconstructedForm.characteristicId = deconstructedForm.path.split("/")[2];
 
-    // Extract expectedDataformat
-    deconstructedForm.expectedDataformat = form[
-      "bir:expectedDataformat"
-    ] as string;
-
-    // Extract receivedDataformat
-    deconstructedForm.receivedDataformat = form[
-      "bir:receivedDataformat"
-    ] as string;
-
     // Extract operation -> e.g. readproperty; writeproperty
     deconstructedForm.operation = form.op;
 
-    // Get ble operation with wot2bleOperation map
-    const expected_ble_operation =
-      wot2bleOperation[deconstructedForm.operation];
-
-    // Get BLE operation type, if not provided use default
-    try {
-      deconstructedForm.ble_operation = form["bir:methodName"];
-    } catch {
-      deconstructedForm.ble_operation = expected_ble_operation;
-    }
-
-    deconstructedForm.expectedData = undefined;
-    try {
-      deconstructedForm.expectedData = form["bir:expectedData"];
-    } catch {}
+    // Get BLE operation type
+    deconstructedForm.ble_operation = form["bt:methodName"];
 
     return deconstructedForm;
   };
-
-  private fill_in_form(expectedData: any, value: any) {
-    value = value.replace('"', "");
-    value = value.split(",");
-
-    let string_template = expectedData[0]["bir:hasForm"];
-    const parameter = expectedData[0]["bir:hasParameter"];
-
-    for (let index = 0; index < parameter.length; ++index) {
-      // Get datatype
-      let dataType = parameter[index].split(":")[1].trim();
-      // Get number value
-      let placeholder = value[index].split(":")[0].trim();
-      let placeholder_value = value[index].split(":")[1].trim();
-
-      // Parse String
-      if (template_map[dataType] == "number") {
-        placeholder_value = parseInt(placeholder_value);
-      }
-
-      // check length
-      let hex_string = placeholder_value.toString(16);
-      if (hex_string.length == 1) {
-        hex_string = "0" + hex_string;
-      }
-      string_template = string_template.replace(
-        "{" + placeholder + "}",
-        hex_string
-      );
-    }
-    return string_template;
-  }
 }

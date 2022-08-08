@@ -57,11 +57,12 @@ The prefered prefix for the ontology is <code>bt</code>.
 | bt:variable | Description of the variables in bt:pattern | required if bt:pattern is used | ? |
 
 ##### Allowed Dataformats
-Allowed Dataformats for <code>bir:receivedDataFormat</code> and <code>bir:expectedDataFormat</code>. This are defined in the bluetooth desciptor.
+What dataformats are even allowed in bluetooth?
+According to descriptor:
 
-| Handler | Dataformat |
+| Group | Dataformat |
 | --- | --- |
-| readInt | int8 |
+| Integer | int8 |
 | " | int12 |
 | " | int16 |
 | " | int24 |
@@ -69,7 +70,7 @@ Allowed Dataformats for <code>bir:receivedDataFormat</code> and <code>bir:expect
 | " | int48 |
 | " | int64 |
 | " | int128 |
-| readUInt | uint2 |
+| Unsigned Integer | uint2 |
 | " | uint4 |
 | " | uint8 |
 | " | uint12 |
@@ -79,9 +80,9 @@ Allowed Dataformats for <code>bir:receivedDataFormat</code> and <code>bir:expect
 | " | uint48|
 | " | uint64 |
 | " | uint128 |
-| readFloat | float32 |
+| Float | float32 |
 | " | float64 |
-| readString | stringUTF8 |
+| String | stringUTF8 |
 | " | stringUTF16 |
 
 

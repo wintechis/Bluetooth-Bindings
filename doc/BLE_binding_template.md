@@ -23,6 +23,15 @@ with the following meaning:
     <service> is the GATT service containing the characteristic
     <characteristic> is the GATT characteristic to interact with
 
+## Content Type
+The contentType (MIME-Type, MediaType) field specifies the content of the message and selects the appropriate codec.
+
+[RFC2046](https://www.rfc-editor.org/rfc/rfc2046.html) provides 5 discrete media types. Relevant is the <code>application</code> type.
+
+According to [RFC2046](https://www.rfc-editor.org/rfc/rfc2046.html):
+- an implementer should invent subtypes of existing types whenever possible (application/???)
+- other application subtypes: unrecognized subtypes are treated as equivalent to "application/octet-stream"
+
 ## Bluetooth Vocabulary
 
 The http Vocablary is based on the http ontology with prefix "htv". Similar to this we want to create an ontology for bluetooth.

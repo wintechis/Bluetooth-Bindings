@@ -37,32 +37,45 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): DataSchemaValue {
+    const bytelength = schema['bt:bytelength'];
+    const signed = schema['bt:signed'];
+    const byteOrder = schema['bt:byteOrder'];
+    const offset = schema['bt:offset'];
+
     let parsed;
 
     if (schema.type == 'integer') {
-      const length = bytes.length/8;
+      let values = [];
 
-      // Limit of JS
-      if (length > 5){
-        throw new Error("Integer is too big!");
+      let i = 0;
+
+      // Split in subarrays the size of bytelength
+      // and interpret the data one at a time
+      while (i < bytes.length) {
+        let sub_buf = bytes.subarray(i, i + bytelength);
+
+        if (byteOrder == 'little') {
+          if (signed) {
+            parsed = sub_buf.readIntLE(offset, bytelength);
+          } else {
+            parsed = sub_buf.readUIntLE(offset, bytelength);
+          }
+        } else if (byteOrder == 'big') {
+          if (signed) {
+            parsed = sub_buf.readIntBE(offset, bytelength);
+          } else {
+            parsed = sub_buf.readUIntBE(offset, bytelength);
+          }
+        }
+
+        values.push(parsed);
+
+        i = i + bytelength;
       }
 
-      if (schema.byteOrder == 'little') {
-        if (schema.signed) {
-          parsed = bytes.readIntLE(0, length);
-        } else {
-          parsed = bytes.readUIntLE(0, length);
-        }
-      } else if (schema.byteOrder == 'big') {
-        if (schema.signed) {
-          parsed = bytes.readIntBE(0, length);
-        } else {
-          parsed = bytes.readUIntBE(0, length);
-        }
-      } else {
-        throw new Error("Byteorder not available! Select 'big' or 'little'.");
-      }
+      return values;
     }
+
     if (schema.type == 'string') {
       parsed = bytes.toString();
     }
@@ -75,7 +88,12 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): Buffer {
-    let hexString;
+    let buf;
+
+    const bytelength = schema['bt:bytelength'];
+    const signed = schema['bt:signed'];
+    const byteOrder = schema['bt:byteOrder'];
+    const offset = schema['bt:offset'];
 
     // Check if pattern is provieded
     if (typeof schema['bt:pattern'] != 'undefined') {
@@ -112,19 +130,33 @@ export class BLEBinaryCodec implements ContentCodec {
       // replace dataValue object with filled in pattern
       dataValue = template.expand(dataValue);
 
-      console.log("[CODEC]",'Codec generated value:', dataValue);
+      console.log('[CODEC]', 'Codec generated value:', dataValue);
     }
 
     // Convert to specified type
     switch (schema.type) {
       case 'integer':
-        // Convert to hexstring
-        hexString = dataValue.toString(16);
+        let buf = Buffer.alloc(bytelength);
+
+        if (byteOrder == 'little') {
+          if (signed) {
+            buf.writeIntLE(dataValue, offset, bytelength);
+          } else {
+            buf.writeUIntLE(dataValue, offset, bytelength);
+          }
+        } else if (byteOrder == 'big') {
+          if (signed) {
+            buf.writeIntBE(dataValue, offset, bytelength);
+          } else {
+            buf.writeUIntBE(dataValue, offset, bytelength);
+          }
+        }
+
         break;
       case 'string':
-        hexString = dataValue;
+        buf = dataValue;
         break;
     }
-    return Buffer.from(hexString, 'utf-8');
+    return buf //Buffer.from(hexString, 'utf-8');
   }
 }

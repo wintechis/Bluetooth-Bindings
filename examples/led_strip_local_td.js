@@ -34,13 +34,15 @@ const td = {
       observable: false,
       readOnly: false,
 
+      'bt:offset': 0,
+      'bt:bytelength': 1,
       'bt:signed': true,
       'bt:byteOrder': 'little',
       'bt:pattern': '7e000503{R}{G}{B}00ef',
       'bt:variables': {
         R: {
           type: 'integer',
-          'bt:fixedByteLength': 1,
+          'bt:bytelength': 1,
         },
         G: {
           type: 'integer',
@@ -56,7 +58,7 @@ const td = {
           href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
-          contentType: 'application/ble+octet-stream; signed=true; ',
+          contentType: 'application/ble+octet-stream',
         },
       ],
       writeOnly: true,

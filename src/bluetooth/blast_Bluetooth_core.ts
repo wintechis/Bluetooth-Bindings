@@ -2,9 +2,9 @@
  * Handle basic bluetooth communication and discovery.
  */
 
-const { createBluetooth } = require("node-ble");
+const {createBluetooth} = require('node-ble');
 
-const { bluetooth, destroy } = createBluetooth();
+const {bluetooth, destroy} = createBluetooth();
 
 const connected_devices = [] as any;
 const connected_macs = [] as any;
@@ -24,7 +24,7 @@ export const getDeviceById = async function (id: string) {
       if (!(await adapter.isDiscovering())) {
         await adapter.startDiscovery();
       }
-      console.debug("[binding-Bluetooth]", "Scanning started");
+      console.debug('[binding-Bluetooth]', 'Scanning started');
 
       const device = await adapter.waitDevice(id);
       return device;
@@ -39,8 +39,8 @@ export const getDeviceById = async function (id: string) {
       setTimeout(resolve, 15000, undefined);
     });
 
-    Promise.race([promise1, promise2]).then((device) => {
-      if (typeof device === "undefined") {
+    Promise.race([promise1, promise2]).then(device => {
+      if (typeof device === 'undefined') {
         throw Error(`Bluetooth device ${id} wasn't found.`);
       }
       resolve(device);
@@ -58,15 +58,15 @@ const connect = async function (id: string) {
   try {
     if (connected_macs.includes(id)) {
       console.debug(
-        "[binding-Bluetooth]",
+        '[binding-Bluetooth]',
         `Device ${id} already connected`,
-        "Bluetooth"
+        'Bluetooth'
       );
 
       return connected_gattserver[connected_macs.indexOf(id)];
     } else {
       const device = (await getDeviceById(id)) as any;
-      console.debug("[binding-Bluetooth]", `Connecting to ${id}`, "Bluetooth");
+      console.debug('[binding-Bluetooth]', `Connecting to ${id}`, 'Bluetooth');
       await device.connect();
       const gattServer = await device.gatt();
       connected_macs.push(id);
@@ -75,7 +75,7 @@ const connect = async function (id: string) {
       return gattServer;
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw Error(`Error connecting to Bluetooth device ${id}`);
   }
 };
@@ -95,9 +95,9 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
     service = await gattServer.getPrimaryService(serviceUUID);
 
     console.debug(
-      "[binding-Bluetooth]",
+      '[binding-Bluetooth]',
       `Got primary service ${serviceUUID}`,
-      "Bluetooth",
+      'Bluetooth',
       id
     );
   } catch (error) {
@@ -133,14 +133,14 @@ export const getCharacteristic = async function (
       characteristicUUID.toLowerCase()
     );
     console.debug(
-      "[binding-Bluetooth]",
+      '[binding-Bluetooth]',
       `Got characteristic ${characteristicUUID} from service ${serviceUUID}`,
-      "Bluetooth",
+      'Bluetooth',
       id
     );
   } catch (error) {
     console.error(error);
-    throw new Error("The device has not the specified characteristic.");
+    throw new Error('The device has not the specified characteristic.');
   }
   return Promise.resolve(characteristic);
 };
@@ -152,23 +152,23 @@ export const getCharacteristic = async function (
  */
 export const hexStringToArrayBuffer = function (hexString: any) {
   // remove the leading 0x
-  hexString = hexString.replace(/^0x/, "");
+  hexString = hexString.replace(/^0x/, '');
 
   // check for some non-hex characters
   const bad = hexString.match(/[G-Z\s]/i);
   if (bad) {
-    console.warn("WARNING: found non-hex characters", bad, "trying to correct");
+    console.warn('WARNING: found non-hex characters', bad, 'trying to correct');
   }
 
-  hexString = hexString.replace(/[^\w\s]/gi, ""); // special char and white space
-  hexString = hexString.replace(/[G-Z\s]/i, "");
+  hexString = hexString.replace(/[^\w\s]/gi, ''); // special char and white space
+  hexString = hexString.replace(/[G-Z\s]/i, '');
 
   // ensure even number of characters
   if (hexString.length % 2 !== 0) {
-    hexString = "0" + hexString;
+    hexString = '0' + hexString;
   }
 
-  hexString = Buffer.from(hexString, "hex");
+  hexString = Buffer.from(hexString, 'hex');
 
   return hexString;
 };
@@ -179,8 +179,8 @@ export const hexStringToArrayBuffer = function (hexString: any) {
 export const tearDown = async function () {
   for (const element of connected_devices) {
     console.debug(
-      "[binding-Bluetooth]",
-      "Disconnecting from Device:",
+      '[binding-Bluetooth]',
+      'Disconnecting from Device:',
       element.device
     );
     await element.disconnect();

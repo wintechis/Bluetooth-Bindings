@@ -1,35 +1,11 @@
 import {ContentCodec} from '@node-wot/core';
+import { type } from 'os';
 import {DataSchema, DataSchemaValue} from 'wot-typescript-definitions';
 const UriTemplate = require('uritemplate');
 
-const handler_map: any = {
-  int8: 'readInt',
-  int12: 'readInt',
-  int16: 'readInt',
-  int24: 'readInt',
-  int32: 'readInt',
-  int48: 'readInt',
-  int64: 'readInt',
-  int128: 'readInt',
-  uint2: 'readUInt',
-  uint4: 'readUInt',
-  uint8: 'readUInt',
-  uint12: 'readUInt',
-  uint16: 'readUInt',
-  uint24: 'readUInt',
-  uint32: 'readUInt',
-  uint48: 'readUInt',
-  uint64: 'readUInt',
-  uint128: 'readUInt',
-  float32: 'readFloat',
-  float64: 'readFloat',
-  stringUTF8: 'readUTF8',
-  stringUTF16: 'readUTF16',
-};
-
 export class BLEBinaryCodec implements ContentCodec {
   getMediaType(): string {
-    return 'application/ble+octet-stream';
+    return 'application/x.ble-octet-stream';
   }
 
   bytesToValue(
@@ -45,35 +21,21 @@ export class BLEBinaryCodec implements ContentCodec {
     let parsed;
 
     if (schema.type == 'integer') {
-      let values = [];
-
-      let i = 0;
-
-      // Split in subarrays the size of bytelength
-      // and interpret the data one at a time
-      while (i < bytes.length) {
-        let sub_buf = bytes.subarray(i, i + bytelength);
-
-        if (byteOrder == 'little') {
-          if (signed) {
-            parsed = sub_buf.readIntLE(offset, bytelength);
-          } else {
-            parsed = sub_buf.readUIntLE(offset, bytelength);
-          }
-        } else if (byteOrder == 'big') {
-          if (signed) {
-            parsed = sub_buf.readIntBE(offset, bytelength);
-          } else {
-            parsed = sub_buf.readUIntBE(offset, bytelength);
-          }
+      if (byteOrder == 'little') {
+        if (signed) {
+          parsed = bytes.readIntLE(offset, bytelength);
+        } else {
+          parsed = bytes.readUIntLE(offset, bytelength);
         }
-
-        values.push(parsed);
-
-        i = i + bytelength;
+      } else if (byteOrder == 'big') {
+        if (signed) {
+          parsed = bytes.readIntBE(offset, bytelength);
+        } else {
+          parsed = bytes.readUIntBE(offset, bytelength);
+        }
       }
 
-      return values;
+      return parsed;
     }
 
     if (schema.type == 'string') {
@@ -88,75 +50,104 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): Buffer {
-    let buf;
+    let buf: any;
+    let hexString: string;
 
-    const bytelength = schema['bt:bytelength'];
-    const signed = schema['bt:signed'];
-    const byteOrder = schema['bt:byteOrder'];
-    const offset = schema['bt:offset'];
-
-    // Check if pattern is provieded
+    // Check if pattern is provieded and fill in
     if (typeof schema['bt:pattern'] != 'undefined') {
-      // Check type of parameters
-      let key: string;
-      let params: any;
-      for ([key, params] of Object.entries(schema['bt:variables'])) {
-        switch (params.type) {
-          case 'integer':
-            // Convert to hex
-            dataValue[key] = dataValue[key].toString(16);
-            // Check if bytelength is provided
-            if (params['bt:fixedByteLength']) {
-              // Check if current byte length smaller than bt:fixedByteLength
-              if (dataValue[key].length / 2 < params['bt:fixedByteLength']) {
-                // Add 0 until fixed length is met
-                while (
-                  dataValue[key].length / 2 !=
-                  params['bt:fixedByteLength']
-                ) {
-                  dataValue[key] = '0' + dataValue[key];
-                }
-              }
-            }
-            break;
-          case 'string':
-            // Do nothing in case of string
-            break;
-        }
+      // String Pattern:
+      if (schema.type == 'string') {
+        hexString = fillPattern(schema, dataValue);
+        buf = string2byte(hexString);
       }
 
-      //Fill in pattern
-      const template = UriTemplate.parse(schema['bt:pattern']);
-      // replace dataValue object with filled in pattern
-      dataValue = template.expand(dataValue);
+      console.log('[CODEC]', 'Codec generated value:', hexString);
+    }
+    // Else create buffer without pattern
+    else {
+      const bytelength = schema['bt:bytelength'];
+      const signed = schema['bt:signed'];
+      const byteOrder = schema['bt:byteOrder'];
+      const offset = schema['bt:offset'];
 
-      console.log('[CODEC]', 'Codec generated value:', dataValue);
+      // Convert to specified type
+      switch (schema.type) {
+        case 'integer':
+          buf = int2byte(schema, dataValue);
+          break;
+        case 'string':
+          buf = string2byte(dataValue);
+          break;
+      }
     }
 
-    // Convert to specified type
-    switch (schema.type) {
-      case 'integer':
-        let buf = Buffer.alloc(bytelength);
-
-        if (byteOrder == 'little') {
-          if (signed) {
-            buf.writeIntLE(dataValue, offset, bytelength);
-          } else {
-            buf.writeUIntLE(dataValue, offset, bytelength);
-          }
-        } else if (byteOrder == 'big') {
-          if (signed) {
-            buf.writeIntBE(dataValue, offset, bytelength);
-          } else {
-            buf.writeUIntBE(dataValue, offset, bytelength);
-          }
-        }
-
-        break;
-      case 'string':
-        buf = dataValue;
-        break;
-    }
-    return buf //Buffer.from(hexString, 'utf-8');
+    return buf; 
   }
+}
+
+// Converts Integer to Buffer
+// Needs bt:bytelength, bt:signed, bt:byteOrder
+// Optional --
+function int2byte(schema: DataSchema, dataValue: any) {
+  const bytelength = schema['bt:bytelength'];
+  const signed = schema['bt:signed'];
+  const byteOrder = schema['bt:byteOrder'];
+  let scale = schema['bt:scale'];
+
+  if (typeof bytelength == "undefined" || typeof signed == "undefined" || typeof byteOrder == "undefined"){
+    throw new Error("Not all parameters are provided!")
+  }
+
+
+  // If scale not provided set to 1
+  if (typeof scale == 'undefined') {
+    scale = 1;
+  }
+
+  let buf = Buffer.alloc(bytelength);
+  if (byteOrder == 'little') {
+    if (signed) {
+      buf.writeIntLE(dataValue, 0, bytelength);
+    } else {
+      buf.writeUIntLE(dataValue, 0, bytelength);
+    }
+  } else if (byteOrder == 'big') {
+    if (signed) {
+      buf.writeIntBE(dataValue, 0, bytelength);
+    } else {
+      buf.writeUIntBE(dataValue, 0, bytelength);
+    }
+  }
+
+  return buf;
+}
+
+function readPattern() {}
+
+// Function fills in the desired pattern
+// return filled in hexString
+function fillPattern(schema: DataSchema, dataValue: any) {
+  let key: string;
+  let params: any;
+
+  // Iterate over provided parameters and convert to hex string
+  for ([key, params] of Object.entries(schema['bt:variables'])) {
+    // Convert integer values to hex string
+    if (params.type == 'integer') {
+      let buf = int2byte(params, dataValue[key]);
+      // Convert Buffer back to hex
+      dataValue[key] = buf.toString('hex');
+    }
+  }
+
+  //Fill in pattern
+  const template = UriTemplate.parse(schema['bt:pattern']);
+  // replace dataValue object with filled in pattern
+  dataValue = template.expand(dataValue);
+
+  return dataValue;
+}
+
+function string2byte(dataValue: string) {
+  return Buffer.from(dataValue, 'utf-8');
 }

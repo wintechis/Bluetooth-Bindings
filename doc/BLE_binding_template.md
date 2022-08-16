@@ -37,6 +37,8 @@ According to [RFC2046](https://www.rfc-editor.org/rfc/rfc2046.html):
 - an implementer should invent subtypes of existing types whenever possible (application/???)
 - other application subtypes: unrecognized subtypes are treated as equivalent to "application/octet-stream"
 
+We use: "application/x.ble-octet-stream"
+
 ## Bluetooth Vocabulary
 
 The http Vocablary is based on the http ontology with prefix "htv". Similar to this we want to create an ontology for bluetooth.
@@ -60,7 +62,6 @@ The prefered prefix for the ontology is <code>bt</code>.
 | bt:signed       | Is the binary data singed?                 | required                       | boolean                                               |
 | bt:byteOrder    | The byte order of the binary data          | required                       | string                                                |
 | bt:scale        | Scale of received integer value            | optional                       | float                                                 |
-| bt:datatype     | Datatype of binary data                    | optional                       | [xsd?](https://www.w3.org/TR/rdf11-concepts/), string |
 | bt:pattern      | The byte pattern of the binary data        | optional                       | string                                                |
 | bt:variable     | Description of the variables in bt:pattern | required if bt:pattern is used | ?                                                     |
 

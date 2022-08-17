@@ -1,5 +1,4 @@
 import {ContentCodec} from '@node-wot/core';
-import { type } from 'os';
 import {DataSchema, DataSchemaValue} from 'wot-typescript-definitions';
 const UriTemplate = require('uritemplate');
 
@@ -13,29 +12,10 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): DataSchemaValue {
-    const bytelength = schema['bt:bytelength'];
-    const signed = schema['bt:signed'];
-    const byteOrder = schema['bt:byteOrder'];
-    const offset = schema['bt:offset'];
-
     let parsed;
 
     if (schema.type == 'integer') {
-      if (byteOrder == 'little') {
-        if (signed) {
-          parsed = bytes.readIntLE(offset, bytelength);
-        } else {
-          parsed = bytes.readUIntLE(offset, bytelength);
-        }
-      } else if (byteOrder == 'big') {
-        if (signed) {
-          parsed = bytes.readIntBE(offset, bytelength);
-        } else {
-          parsed = bytes.readUIntBE(offset, bytelength);
-        }
-      }
-
-      return parsed;
+      parsed = byte2int(schema, bytes)
     }
 
     if (schema.type == 'string') {
@@ -65,11 +45,6 @@ export class BLEBinaryCodec implements ContentCodec {
     }
     // Else create buffer without pattern
     else {
-      const bytelength = schema['bt:bytelength'];
-      const signed = schema['bt:signed'];
-      const byteOrder = schema['bt:byteOrder'];
-      const offset = schema['bt:offset'];
-
       // Convert to specified type
       switch (schema.type) {
         case 'integer':
@@ -80,24 +55,50 @@ export class BLEBinaryCodec implements ContentCodec {
           break;
       }
     }
-
-    return buf; 
+    return buf;
   }
+}
+
+function byte2int(schema: DataSchema, bytes: Buffer) {
+  const bytelength = schema['bt:bytelength'];
+  const signed = schema['bt:signed'];
+  const byteOrder = schema['bt:byteOrder'];
+
+  let parsed: number;
+
+  if (byteOrder == 'little') {
+    if (signed) {
+      parsed = bytes.readIntLE(0, bytelength);
+    } else {
+      parsed = bytes.readUIntLE(0, bytelength);
+    }
+  } else if (byteOrder == 'big') {
+    if (signed) {
+      parsed = bytes.readIntBE(0, bytelength);
+    } else {
+      parsed = bytes.readUIntBE(0, bytelength);
+    }
+  }
+
+  return parsed;
 }
 
 // Converts Integer to Buffer
 // Needs bt:bytelength, bt:signed, bt:byteOrder
-// Optional --
+// Optional bt:scale
 function int2byte(schema: DataSchema, dataValue: any) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
   const byteOrder = schema['bt:byteOrder'];
   let scale = schema['bt:scale'];
 
-  if (typeof bytelength == "undefined" || typeof signed == "undefined" || typeof byteOrder == "undefined"){
-    throw new Error("Not all parameters are provided!")
+  if (
+    typeof bytelength == 'undefined' ||
+    typeof signed == 'undefined' ||
+    typeof byteOrder == 'undefined'
+  ) {
+    throw new Error('Not all parameters are provided!');
   }
-
 
   // If scale not provided set to 1
   if (typeof scale == 'undefined') {

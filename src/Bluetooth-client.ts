@@ -62,7 +62,7 @@ export default class BluetoothClient implements ProtocolClient {
     const body = ProtocolHelpers.toNodeStream(s as Readable);
 
     return {
-      type: 'application/ble+octet-stream',
+      type: form.contentType || 'application/x.ble-octet-stream',
       body: body,
     };
   }
@@ -78,43 +78,45 @@ export default class BluetoothClient implements ProtocolClient {
     content: Content
   ): Promise<void> {
     const deconstructedForm = this.deconstructForm(form);
-    let value = '';
-    //Convert readableStreamToString
+    let buffer: Buffer;
+    //Convert readableStreamToBuffer
     if (typeof content != 'undefined') {
       const chunks = [];
       for await (const chunk of content.body) {
         chunks.push(chunk as Buffer);
       }
-      const buffer = Buffer.concat(chunks);
-      value = new TextDecoder().decode(buffer);
+      buffer = Buffer.concat(chunks);
+    }else {
+      // If content not definied write buffer < 00 >
+      buffer = Buffer.alloc(1)
     }
-
+    
     // Select what operation should be executed
     switch (deconstructedForm.ble_operation) {
       case 'write':
         console.debug(
           '[binding-Bluetooth]',
-          `invoking writeWithResponse with value ${value}`
+          `invoking writeWithResponse with value ${buffer.toString()}`
         );
         await write(
           deconstructedForm.deviceId,
           deconstructedForm.serviceId,
           deconstructedForm.characteristicId,
           true,
-          value
+          buffer
         );
         break;
       case 'write-without-response':
         console.debug(
           '[binding-Bluetooth]',
-          `invoking writeWithoutResponse with value ${value}`
+          `invoking writeWithoutResponse with value ${buffer.toString()}`
         );
         await write(
           deconstructedForm.deviceId,
           deconstructedForm.serviceId,
           deconstructedForm.characteristicId,
           false,
-          value
+          buffer
         );
         break;
       default: {
@@ -128,16 +130,17 @@ export default class BluetoothClient implements ProtocolClient {
   /**
    * Invokes an action
    * @param {BluetoothForm} form form of action to invoke.
-   * @param {Content} content content to write to device -> Empty
+   * @param {Content} content content to write to device
    * @returns {Promise} Promise that resolves to the read value.
    */
   public async invokeResource(
     form: BluetoothForm,
     content: Content
   ): Promise<Content> {
-    // Call writeRessource without content
-    return this.writeResource(form, content).then(() => {
-      let s = new Readable();
+    // Call writeRessource
+    await this.writeResource(form, content)
+    // Output will probably not be returned
+    let s = new Readable();
       s.push('');
       s.push(null);
       const body = ProtocolHelpers.toNodeStream(s as Readable);
@@ -145,7 +148,6 @@ export default class BluetoothClient implements ProtocolClient {
         type: 'text/plain',
         body: body,
       };
-    });
   }
 
   public async unlinkResource(form: BluetoothForm): Promise<void> {
@@ -208,7 +210,7 @@ export default class BluetoothClient implements ProtocolClient {
       s.push(null);
       const body = ProtocolHelpers.toNodeStream(s as Readable);
       const content = {
-        type: form.contentType || 'application/ble+octet-stream',
+        type: form.contentType || 'application/x.ble-octet-stream',
         body: body,
       };
       next(content);

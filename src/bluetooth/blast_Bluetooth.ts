@@ -83,11 +83,6 @@ export const write = async function (
     return;
   }
 
-  // If value is a string, convert it to an ArrayBuffer.
-  if (typeof value === 'string') {
-    value = hexStringToArrayBuffer(value);
-  }
-
   try {
     if (withResponse) {
       console.debug(
@@ -130,51 +125,6 @@ export const write = async function (
   }
 };
 
-/**
- * Subscription functionality
- */
-
-/**
- * Subscribes to a Bluetooth characteristic and adds an event listener.
- * @param {BluetoothDevice.id} id identifier of the device to read from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} charUUID identifier of the characteristic.
- * @param {Function} handler handler to register for notifications.
- */
-/*
-export const subscribe = async function (
-  id: string,
-  serviceUUID: string,
-  charUUID: string,
-  handler: any
-) {
-  const characteristic = await getCharacteristic(id, serviceUUID, charUUID);
-  console.debug(
-    `Add 'characteristicvaluechanged' listener to characteristic ${charUUID}` +
-      ` of service ${serviceUUID}`,
-    "Bluetooth",
-    id
-  );
-  try {
-    console.debug(
-      `Invoke startNotifications on characteristic ${charUUID}` +
-        ` from service ${serviceUUID}`,
-      "Bluetooth",
-      id
-    );
-    await characteristic.startNotifications();
-    console.debug(
-      `Finished startNotifications on characteristic ${charUUID}` +
-        ` from service ${serviceUUID}`,
-      "Bluetooth",
-      id
-    );
-  } catch (error) {
-    console.error(error);
-    console.error(`Error subscribing to Bluetooth device ${id}`);
-  }
-};
-*/
 /**
  * Reads a Thing Description from a Bluetooth device.
  * The TD should be located in under the WoT Service.

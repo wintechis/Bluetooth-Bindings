@@ -69,7 +69,7 @@ export class BLEBinaryCodec implements ContentCodec {
 function byte2int(schema: DataSchema, bytes: Buffer) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
-  const byteOrder = schema['bt:byteOrder'];
+  const byteOrder = schema['bt:byteOrder'] || "little"; 
 
   let parsed: number;
 
@@ -99,7 +99,7 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
 function int2byte(schema: DataSchema, dataValue: number) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
-  const byteOrder = schema['bt:byteOrder'];
+  const byteOrder = schema['bt:byteOrder'] || "little"; 
   let scale = schema['bt:scale'];
 
   if (

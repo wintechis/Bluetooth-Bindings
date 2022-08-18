@@ -61,7 +61,6 @@ const td = {
           type: 'integer',
           'bt:bytelength': 1,
           'bt:signed': false,
-          'bt:byteOrder': 'little',
           minimum: 0,
           maximum: 255,
         },
@@ -93,7 +92,6 @@ const td = {
           maximum: 1,
           'bt:bytelength': 1,
           'bt:signed': false,
-          'bt:byteOrder': 'little',
         },
       },
       forms: [
@@ -123,7 +121,6 @@ const td = {
           maximum: 156,
           'bt:bytelength': 1,
           'bt:signed': false,
-          'bt:byteOrder': 'little',
         },
       },
       forms: [

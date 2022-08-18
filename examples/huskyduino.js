@@ -43,13 +43,13 @@ const td = {
       'bt:byteOrder': 'little',
       forms: [
         {
-          href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
+          href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
           'bt:methodName': 'read',
           contentType: 'application/x.ble-octet-stream',
         },
         {
-          href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
+          href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
           op: 'writeproperty',
           'bt:methodName': 'write-without-response',
           contentType: 'application/x.ble-octet-stream',
@@ -65,7 +65,7 @@ const td = {
 
       forms: [
         {
-          href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
+          href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
           'bt:methodName': 'read',
           contentType: 'application/x.ble-octet-stream',
@@ -87,7 +87,7 @@ const td = {
       'bt:byteOrder': 'little',
       forms: [
         {
-          href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35eca-f9b0-11eb-9a03-0242ac130003',
+          href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35eca-f9b0-11eb-9a03-0242ac130003',
           op: 'writeproperty',
           'bt:methodName': 'write-without-response',
           contentType: 'application/x.ble-octet-stream',
@@ -104,7 +104,7 @@ const td = {
 
       forms: [
         {
-          href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
+          href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
           'bt:methodName': 'read',
           contentType: 'application/x.ble-octet-stream',
@@ -125,7 +125,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be361b8-f9b0-11eb-9a03-0242ac130003',
+          href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be361b8-f9b0-11eb-9a03-0242ac130003',
           op: 'invokeaction',
           'bt:methodName': 'write-without-response',
           contentType: 'application/x.ble-octet-stream',

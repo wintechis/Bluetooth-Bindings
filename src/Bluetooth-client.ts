@@ -174,7 +174,7 @@ export default class BluetoothClient implements ProtocolClient {
 
     await characteristic.startNotifications();
 
-    characteristic.on('valuechanged', (buffer: any) => {
+    characteristic.on('valuechanged', (buffer: Buffer) => {
       console.debug(
         '[binding-Bluetooth]',
         `event occured on characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
@@ -222,11 +222,10 @@ export default class BluetoothClient implements ProtocolClient {
     deconstructedForm.path = form.href.split('//')[1];
 
     // DeviceId is mac of device. Add ':'
-    // e.g. c03c59a89106  -> c0:3c:59:a8:91:06
-    deconstructedForm.deviceId = deconstructedForm.path
-      .split('/')[0]
-      .replace(/(.{2})/g, '$1:')
-      .slice(0, -1);
+    // e.g. c0-3c-59-a8-91-06  -> c0:3c:59:a8:91:06
+    deconstructedForm.deviceId = deconstructedForm.path.split('/')[0]
+    deconstructedForm.deviceId = deconstructedForm.deviceId.toUpperCase()
+    deconstructedForm.deviceId = deconstructedForm.deviceId.replaceAll("-", ':')
 
     // Extract serviceId
     deconstructedForm.serviceId = deconstructedForm.path.split('/')[1];

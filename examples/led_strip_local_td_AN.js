@@ -31,7 +31,9 @@ const td = {
   security: ['nosec_sc'],
   properties: {
     colour: {
-      type: 'hexstring',
+      type: 'string',
+      format: 'hex',
+
       observable: false,
       readOnly: false,
       writeOnly: true,
@@ -44,23 +46,29 @@ const td = {
           'bt:bytelength': 1,
           'bt:signed': false,
           'bt:byteOrder': 'little',
+          minimum: 0,
+          maximum: 255,
         },
         G: {
           type: 'integer',
           'bt:bytelength': 1,
           'bt:signed': false,
           'bt:byteOrder': 'little',
+          minimum: 0,
+          maximum: 255,
         },
         B: {
           type: 'integer',
           'bt:bytelength': 1,
           'bt:signed': false,
           'bt:byteOrder': 'little',
+          minimum: 0,
+          maximum: 255,
         },
       },
       forms: [
         {
-          href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
+          href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
           contentType: 'application/x.ble-octet-stream',
@@ -69,7 +77,9 @@ const td = {
     },
 
     power: {
-      type: 'hexstring',
+      type: 'string',
+      format: 'hex',
+
       observable: false,
       readOnly: false,
       writeOnly: true,
@@ -88,7 +98,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
+          href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
           contentType: 'application/x.ble-octet-stream',
@@ -97,7 +107,9 @@ const td = {
     },
 
     effect: {
-      type: 'hexstring',
+      type: 'string',
+      format: 'hex',
+
       observable: false,
       readOnly: false,
       writeOnly: true,
@@ -116,7 +128,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
+          href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
           contentType: 'application/x.ble-octet-stream',

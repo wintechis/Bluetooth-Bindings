@@ -68,7 +68,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
+          href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
           contentType: 'application/x.ble-octet-stream',
@@ -98,7 +98,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
+          href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
           contentType: 'application/x.ble-octet-stream',
@@ -128,7 +128,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://BE583000CC11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
+          href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'bt:methodName': 'write',
           contentType: 'application/x.ble-octet-stream',

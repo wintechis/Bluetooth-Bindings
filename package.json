@@ -6,7 +6,7 @@
     "@node-wot/core": "^0.8.1",
     "@types/node": "^18.0.6",
     "dbus-next": "https://github.com/FreuMi/node-dbus-next.git",
-    "node-ble": "https://github.com/FreuMi/node-ble.git",
+    "node-ble": "https://github.com/dorschre/node-ble.git",
     "typescript": "^4.7.4"
   }
 }

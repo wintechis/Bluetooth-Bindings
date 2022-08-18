@@ -31,9 +31,7 @@ const td = {
   security: ['nosec_sc'],
   properties: {
     colour: {
-      type: 'string',
-      format: 'hex',
-
+      type: 'hexstring',
       observable: false,
       readOnly: false,
       writeOnly: true,
@@ -46,24 +44,18 @@ const td = {
           'bt:bytelength': 1,
           'bt:signed': false,
           'bt:byteOrder': 'little',
-          minimum: 0,
-          maximum: 255,
         },
         G: {
           type: 'integer',
           'bt:bytelength': 1,
           'bt:signed': false,
           'bt:byteOrder': 'little',
-          minimum: 0,
-          maximum: 255,
         },
         B: {
           type: 'integer',
           'bt:bytelength': 1,
           'bt:signed': false,
           'bt:byteOrder': 'little',
-          minimum: 0,
-          maximum: 255,
         },
       },
       forms: [
@@ -77,9 +69,7 @@ const td = {
     },
 
     power: {
-      type: 'string',
-      format: 'hex',
-
+      type: 'hexstring',
       observable: false,
       readOnly: false,
       writeOnly: true,
@@ -107,9 +97,7 @@ const td = {
     },
 
     effect: {
-      type: 'string',
-      format: 'hex',
-
+      type: 'hexstring',
       observable: false,
       readOnly: false,
       writeOnly: true,
@@ -140,31 +128,71 @@ const td = {
 
 try {
   servient.start().then(async WoT => {
+    await sleep(15000)
+    let arr =  []
     let thing = await WoT.consume(td);
-    await sleep(10000);
-    // Write Effect
-    await thing.writeProperty('effect', {type: 156});
-    await sleep(3000);
+    for (let i = 0; i < 40; i++) {
+      console.log("====================")
+      console.log("START", i)
+      console.log("====================")
 
-    // Power off
-    await thing.writeProperty('power', {is_on: 0});
-    await sleep(3000);
+      const start = performance.now();
+      // Write Effect
+      await thing.writeProperty('effect', {type: 156});
+      //await sleep(3000);
 
-    // Power on
-    await thing.writeProperty('power', {is_on: 1});
-    await sleep(3000);
+      // Power off
+      await thing.writeProperty('power', {is_on: 0});
+      //await sleep(3000);
 
-    // Change color to RGB
-    await thing.writeProperty('colour', {R: 255, G: 0, B: 0});
-    await sleep(3000);
-    await thing.writeProperty('colour', {R: 0, G: 255, B: 0});
-    await sleep(3000);
-    await thing.writeProperty('colour', {R: 0, G: 0, B: 255});
-    await sleep(3000);
+      // Power on
+      await thing.writeProperty('power', {is_on: 1});
+      //await sleep(3000);
 
-    // Close connection
-    await blast_Bluetooth_core.closeBluetooth();
+      // Change color to RGB
+      await thing.writeProperty('colour', {R: 255, G: 0, B: 0});
+      //await sleep(3000);
+      await thing.writeProperty('colour', {R: 0, G: 255, B: 0});
+      //await sleep(3000);
+      await thing.writeProperty('colour', {R: 0, G: 0, B: 255});
+      //await sleep(3000);
+
+      // Close connection
+      await blast_Bluetooth_core.tearDown();
+
+      const end = performance.now();
+      arr.push(end - start)
+      //await sleep(3000);
+    }
+    //console.log(arr)
+    console.log("SUMME:", summe(arr))
+    console.log("Mittelwert:", summe(arr)/arr.length)
+    console.log("Standardabweichung:", standardabweichung(arr))
+
   });
 } catch (err) {
   console.error('Script error:', err);
+}
+
+function standardabweichung(arr){
+  let mean = summe(arr)/arr.length
+
+  // (x - mean)^2
+  let val = 0
+  for (let i = 0; i < arr.length; i++) {
+    val += (arr[i]-mean) ** 2
+  } 
+
+  // 1/(n-1) * val
+  let tmp = (1/(arr.length-1))*val
+  return Math.sqrt(tmp)
+}
+
+function summe(arr){
+  sum = 0
+  for (let i = 0; i < arr.length; i++) {
+    sum += arr[i]
+  } 
+
+  return sum;
 }

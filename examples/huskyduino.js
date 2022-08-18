@@ -35,19 +35,22 @@ const td = {
       writeOnly: false,
       description: 'The currently active algorithm',
 
+      minimum: 1,
+      maximum: 7,
+
       'bt:bytelength': 1,
       'bt:signed': false,
       'bt:byteOrder': 'little',
       forms: [
         {
           href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
-          op: ['readproperty'],
+          op: 'readproperty',
           'bt:methodName': 'read',
           contentType: 'application/x.ble-octet-stream',
         },
         {
           href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
-          op: ['writeproperty'],
+          op: 'writeproperty',
           'bt:methodName': 'write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
@@ -60,13 +63,10 @@ const td = {
       writeOnly: false,
       description: 'The ID of the face or object',
 
-      'bt:bytelength': 1,
-      'bt:signed': false,
-      'bt:byteOrder': 'little',
       forms: [
         {
           href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
-          op: ['readproperty'],
+          op: 'readproperty',
           'bt:methodName': 'read',
           contentType: 'application/x.ble-octet-stream',
         },
@@ -79,13 +79,16 @@ const td = {
       writeOnly: true,
       description: 'The ID of the face or object',
 
+      minimum: 0,
+      maximum: 255,
+
       'bt:bytelength': 1,
       'bt:signed': false,
       'bt:byteOrder': 'little',
       forms: [
         {
           href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35eca-f9b0-11eb-9a03-0242ac130003',
-          op: ['writeproperty'],
+          op: 'writeproperty',
           'bt:methodName': 'write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
@@ -102,7 +105,7 @@ const td = {
       forms: [
         {
           href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
-          op: ['readproperty'],
+          op: 'readproperty',
           'bt:methodName': 'read',
           contentType: 'application/x.ble-octet-stream',
         },
@@ -118,11 +121,12 @@ const td = {
       description: 'Forget all faces and objects',
       input: {
         type: 'string',
+        enum: ["true"]
       },
       forms: [
         {
           href: 'gatt://6A7A34B0D0DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be361b8-f9b0-11eb-9a03-0242ac130003',
-          op: ['invokeaction'],
+          op: 'invokeaction',
           'bt:methodName': 'write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
@@ -134,7 +138,6 @@ const td = {
 try {
   servient.start().then(async WoT => {
     let thing = await WoT.consume(td);
-
     // set algorithm to 0
     await thing.writeProperty('algorithm', 0);
 

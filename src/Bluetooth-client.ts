@@ -4,33 +4,9 @@ import {BluetoothForm} from './Bluetooth.js';
 import {Subscription} from 'rxjs';
 import {Readable} from 'stream';
 
+//import {write} from './bluetooth/ble';
 import {read, write} from './bluetooth/blast_Bluetooth';
 import {getCharacteristic} from './bluetooth/blast_Bluetooth_core';
-
-const template_map: any = {
-  int8: 'number',
-  int12: 'number',
-  int16: 'number',
-  int24: 'number',
-  int32: 'number',
-  int48: 'number',
-  int64: 'number',
-  int128: 'number',
-  uint2: 'number',
-  uint4: 'number',
-  uint8: 'number',
-  uint12: 'number',
-  uint16: 'number',
-  uint24: 'number',
-  uint32: 'number',
-  uint48: 'number',
-  uint64: 'readUInt',
-  uint128: 'readUInt',
-  float32: 'readFloat',
-  float64: 'readFloat',
-  stringUTF8: 'readUTF8',
-  stringUTF16: 'readUTF16',
-};
 
 export default class BluetoothClient implements ProtocolClient {
   public toString(): string {
@@ -86,11 +62,11 @@ export default class BluetoothClient implements ProtocolClient {
         chunks.push(chunk as Buffer);
       }
       buffer = Buffer.concat(chunks);
-    }else {
+    } else {
       // If content not definied write buffer < 00 >
-      buffer = Buffer.alloc(1)
+      buffer = Buffer.alloc(1);
     }
-    
+
     // Select what operation should be executed
     switch (deconstructedForm.ble_operation) {
       case 'write':
@@ -138,16 +114,16 @@ export default class BluetoothClient implements ProtocolClient {
     content: Content
   ): Promise<Content> {
     // Call writeRessource
-    await this.writeResource(form, content)
+    await this.writeResource(form, content);
     // Output will probably not be returned
     let s = new Readable();
-      s.push('');
-      s.push(null);
-      const body = ProtocolHelpers.toNodeStream(s as Readable);
-      return {
-        type: 'text/plain',
-        body: body,
-      };
+    s.push('');
+    s.push(null);
+    const body = ProtocolHelpers.toNodeStream(s as Readable);
+    return {
+      type: 'text/plain',
+      body: body,
+    };
   }
 
   public async unlinkResource(form: BluetoothForm): Promise<void> {
@@ -215,7 +191,7 @@ export default class BluetoothClient implements ProtocolClient {
       };
       next(content);
     });
-
+    
     return new Subscription(() => {});
   }
 

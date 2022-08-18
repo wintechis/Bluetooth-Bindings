@@ -7,6 +7,7 @@ export class BLEBinaryCodec implements ContentCodec {
     return 'application/x.ble-octet-stream';
   }
 
+  // Convert bytes to specified value
   bytesToValue(
     bytes: Buffer,
     schema: DataSchema,
@@ -15,16 +16,16 @@ export class BLEBinaryCodec implements ContentCodec {
     let parsed;
 
     if (schema.type == 'integer') {
-      parsed = byte2int(schema, bytes)
+      parsed = byte2int(schema, bytes);
     }
 
     if (schema.type == 'string') {
-      parsed = bytes.toString();
+      parsed = byte2string(schema, bytes);
     }
-
     return parsed;
   }
 
+  // Convert value to bytes
   valueToBytes(
     dataValue: any,
     schema: DataSchema,
@@ -35,10 +36,10 @@ export class BLEBinaryCodec implements ContentCodec {
 
     // Check if pattern is provieded and fill in
     if (typeof schema['bt:pattern'] != 'undefined') {
-      // String Pattern:
+      // String Pattern
       if (schema.type == 'string') {
-        hexString = fillPattern(schema, dataValue);
-        buf = string2byte(hexString);
+        hexString = fillStringPattern(schema, dataValue);
+        buf = string2byte(schema, hexString);
       }
 
       console.log('[CODEC]', 'Codec generated value:', hexString);
@@ -51,7 +52,7 @@ export class BLEBinaryCodec implements ContentCodec {
           buf = int2byte(schema, dataValue);
           break;
         case 'string':
-          buf = string2byte(dataValue);
+          buf = string2byte(schema, dataValue);
           break;
       }
     }
@@ -59,6 +60,12 @@ export class BLEBinaryCodec implements ContentCodec {
   }
 }
 
+/**
+ * Converts bytes to integer.
+ * @param {DataSchema} schema schema of executed property, action or event.
+ * @param {Buffer} bytes received byte value.
+ * @return {Integer} converted byte value.
+ */
 function byte2int(schema: DataSchema, bytes: Buffer) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
@@ -83,10 +90,13 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
   return parsed;
 }
 
-// Converts Integer to Buffer
-// Needs bt:bytelength, bt:signed, bt:byteOrder
-// Optional bt:scale
-function int2byte(schema: DataSchema, dataValue: any) {
+/**
+ * Converts integer to bytes.
+ * @param {DataSchema} schema schema of executed property, action or event.
+ * @param {Buffer} bytes received byte value.
+ * @return {Integer} converted byte value.
+ */
+function int2byte(schema: DataSchema, dataValue: number) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
   const byteOrder = schema['bt:byteOrder'];
@@ -104,6 +114,9 @@ function int2byte(schema: DataSchema, dataValue: any) {
   if (typeof scale == 'undefined') {
     scale = 1;
   }
+
+  // Apply scale
+  dataValue = dataValue * scale;
 
   let buf = Buffer.alloc(bytelength);
   if (byteOrder == 'little') {
@@ -127,10 +140,9 @@ function readPattern() {}
 
 // Function fills in the desired pattern
 // return filled in hexString
-function fillPattern(schema: DataSchema, dataValue: any) {
+function fillStringPattern(schema: DataSchema, dataValue: any) {
   let key: string;
   let params: any;
-
   // Iterate over provided parameters and convert to hex string
   for ([key, params] of Object.entries(schema['bt:variables'])) {
     // Convert integer values to hex string
@@ -149,6 +161,26 @@ function fillPattern(schema: DataSchema, dataValue: any) {
   return dataValue;
 }
 
-function string2byte(dataValue: string) {
-  return Buffer.from(dataValue, 'utf-8');
+// Convert string to buffer
+function string2byte(schema: DataSchema, dataValue: string) {
+  let buf;
+  if (typeof schema.format == 'undefined') {
+    buf = Buffer.from(dataValue, 'utf-8');
+  } else if (schema.format == 'hex') {
+    buf = Buffer.from(dataValue, 'hex');
+  }
+  return buf;
 }
+
+function byte2string(schema: DataSchema, bytes: Buffer) {
+  let value;
+  if (typeof schema.format == 'undefined') {
+    value = bytes.toString('utf-8');
+  } else if (schema.format == 'hex') {
+    value = bytes.toString('hex');
+  }
+  return value;
+}
+// TODO
+// scale?
+// readpattern

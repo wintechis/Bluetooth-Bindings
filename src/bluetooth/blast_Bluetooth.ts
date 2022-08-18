@@ -4,8 +4,7 @@
 
 import {
   getCharacteristic,
-  tearDown,
-  hexStringToArrayBuffer,
+  tearDown
 } from './blast_Bluetooth_core';
 
 /**
@@ -18,7 +17,6 @@ import {
  * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
  * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
  * @return {Promise} representation of the complete request with response.
- * @public
  */
 export const read = async function (
   id: string,
@@ -117,6 +115,8 @@ export const write = async function (
         id
       );
     }
+    // Disconnect
+    await tearDown()
   } catch (error) {
     const errorMsg =
       'Error writing to Bluetooth device.\nMake sure the device is compatible with the connected block.';

@@ -6,9 +6,9 @@ const {createBluetooth} = require('node-ble');
 
 const {bluetooth, destroy} = createBluetooth();
 
-const connected_devices = [] as any;
-const connected_macs = [] as any;
-const connected_gattserver = [] as any;
+const connected_devices: Array<any> = [];
+const connected_macs: Array<string> = [];
+const connected_gattserver: Array<object> = [];
 
 /**
  * Returns a paired bluetooth device by their id.
@@ -65,7 +65,7 @@ const connect = async function (id: string) {
 
       return connected_gattserver[connected_macs.indexOf(id)];
     } else {
-      const device = (await getDeviceById(id)) as any;
+      const device: any = await getDeviceById(id);
       console.debug('[binding-Bluetooth]', `Connecting to ${id}`, 'Bluetooth');
       await device.connect();
       const gattServer = await device.gatt();
@@ -143,34 +143,6 @@ export const getCharacteristic = async function (
     throw new Error('The device has not the specified characteristic.');
   }
   return Promise.resolve(characteristic);
-};
-
-/**
- * Convert a hex string to an ArrayBuffer.
- * @param {string} hexString - hex representation of bytes
- * @return {ArrayBuffer} - The bytes in an ArrayBuffer.
- */
-export const hexStringToArrayBuffer = function (hexString: any) {
-  // remove the leading 0x
-  hexString = hexString.replace(/^0x/, '');
-
-  // check for some non-hex characters
-  const bad = hexString.match(/[G-Z\s]/i);
-  if (bad) {
-    console.warn('WARNING: found non-hex characters', bad, 'trying to correct');
-  }
-
-  hexString = hexString.replace(/[^\w\s]/gi, ''); // special char and white space
-  hexString = hexString.replace(/[G-Z\s]/i, '');
-
-  // ensure even number of characters
-  if (hexString.length % 2 !== 0) {
-    hexString = '0' + hexString;
-  }
-
-  hexString = Buffer.from(hexString, 'hex');
-
-  return hexString;
 };
 
 /**

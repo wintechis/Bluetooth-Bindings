@@ -31,7 +31,7 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): Buffer {
-    let buf: any;
+    let buf: Buffer;
     let hexString: string;
 
     // Check if pattern is provieded and fill in
@@ -69,7 +69,8 @@ export class BLEBinaryCodec implements ContentCodec {
 function byte2int(schema: DataSchema, bytes: Buffer) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
-  const byteOrder = schema['bt:byteOrder'] || "little"; 
+  const byteOrder = schema['bt:byteOrder'] || 'little';
+  const scale = schema['bt:scale'] || 1;
 
   let parsed: number;
 
@@ -87,6 +88,8 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
     }
   }
 
+  parsed = parsed * scale;
+
   return parsed;
 }
 
@@ -99,8 +102,8 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
 function int2byte(schema: DataSchema, dataValue: number) {
   const bytelength = schema['bt:bytelength'];
   const signed = schema['bt:signed'];
-  const byteOrder = schema['bt:byteOrder'] || "little"; 
-  let scale = schema['bt:scale'];
+  const byteOrder = schema['bt:byteOrder'] || 'little';
+  const scale = schema['bt:scale'] || 1;
 
   if (
     typeof bytelength == 'undefined' ||
@@ -108,11 +111,6 @@ function int2byte(schema: DataSchema, dataValue: number) {
     typeof byteOrder == 'undefined'
   ) {
     throw new Error('Not all parameters are provided!');
-  }
-
-  // If scale not provided set to 1
-  if (typeof scale == 'undefined') {
-    scale = 1;
   }
 
   // Apply scale

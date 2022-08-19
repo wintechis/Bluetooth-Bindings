@@ -116,7 +116,7 @@ export const write = async function (
       );
     }
     // Disconnect
-    await tearDown()
+    //await tearDown()
   } catch (error) {
     const errorMsg =
       'Error writing to Bluetooth device.\nMake sure the device is compatible with the connected block.';

@@ -71,20 +71,21 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
   const signed = schema['bt:signed'];
   const byteOrder = schema['bt:byteOrder'] || 'little';
   const scale = schema['bt:scale'] || 1;
+  const offset = schema['bt:offset'] || 0;
 
   let parsed: number;
 
   if (byteOrder == 'little') {
     if (signed) {
-      parsed = bytes.readIntLE(0, bytelength);
+      parsed = bytes.readIntLE(offset, bytelength);
     } else {
-      parsed = bytes.readUIntLE(0, bytelength);
+      parsed = bytes.readUIntLE(offset, bytelength);
     }
   } else if (byteOrder == 'big') {
     if (signed) {
-      parsed = bytes.readIntBE(0, bytelength);
+      parsed = bytes.readIntBE(offset, bytelength);
     } else {
-      parsed = bytes.readUIntBE(0, bytelength);
+      parsed = bytes.readUIntBE(offset, bytelength);
     }
   }
 
@@ -104,6 +105,7 @@ function int2byte(schema: DataSchema, dataValue: number) {
   const signed = schema['bt:signed'];
   const byteOrder = schema['bt:byteOrder'] || 'little';
   const scale = schema['bt:scale'] || 1;
+  const offset = schema['bt:offset'] || 0;
 
   if (
     typeof bytelength == 'undefined' ||
@@ -119,15 +121,15 @@ function int2byte(schema: DataSchema, dataValue: number) {
   let buf = Buffer.alloc(bytelength);
   if (byteOrder == 'little') {
     if (signed) {
-      buf.writeIntLE(dataValue, 0, bytelength);
+      buf.writeIntLE(dataValue, offset, bytelength);
     } else {
-      buf.writeUIntLE(dataValue, 0, bytelength);
+      buf.writeUIntLE(dataValue, offset, bytelength);
     }
   } else if (byteOrder == 'big') {
     if (signed) {
-      buf.writeIntBE(dataValue, 0, bytelength);
+      buf.writeIntBE(dataValue, offset, bytelength);
     } else {
-      buf.writeUIntBE(dataValue, 0, bytelength);
+      buf.writeUIntBE(dataValue, offset, bytelength);
     }
   }
 
@@ -170,6 +172,7 @@ function string2byte(schema: DataSchema, dataValue: string) {
   return buf;
 }
 
+// Convert buffer to string
 function byte2string(schema: DataSchema, bytes: Buffer) {
   let value;
   if (typeof schema.format == 'undefined') {

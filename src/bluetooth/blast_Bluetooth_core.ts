@@ -4,11 +4,12 @@
 
 const {createBluetooth} = require('node-ble');
 
-const {bluetooth, destroy} = createBluetooth();
+import {
+  stay_connected_arr,
+  cons
+} from './blast_Bluetooth';
 
-const connected_devices: Array<any> = [];
-const connected_macs: Array<string> = [];
-const connected_gattserver: Array<object> = [];
+export const {bluetooth, destroy} = createBluetooth();
 
 /**
  * Returns a paired bluetooth device by their id.
@@ -56,22 +57,24 @@ export const getDeviceById = async function (id: string) {
 const connect = async function (id: string) {
   // Check if already connected
   try {
-    if (connected_macs.includes(id)) {
+    if (id in cons) {
       console.debug(
         '[binding-Bluetooth]',
         `Device ${id} already connected`,
         'Bluetooth'
       );
 
-      return connected_gattserver[connected_macs.indexOf(id)];
+      // return GattServer of device with id
+      return cons[id][1];
     } else {
       const device: any = await getDeviceById(id);
       console.debug('[binding-Bluetooth]', `Connecting to ${id}`, 'Bluetooth');
       await device.connect();
       const gattServer = await device.gatt();
-      connected_macs.push(id);
-      connected_devices.push(device);
-      connected_gattserver.push(gattServer);
+      // if id/mac in stay_connected_arr save connection
+      if (id in stay_connected_arr) {
+        cons[id] = [device, gattServer]
+      }
       return gattServer;
     }
   } catch (error) {
@@ -143,31 +146,4 @@ export const getCharacteristic = async function (
     throw new Error('The device has not the specified characteristic.');
   }
   return Promise.resolve(characteristic);
-};
-
-/**
- * Disconnects from all connected devices
- */
-export const tearDown = async function () {
-  for (const element of connected_devices) {
-    console.debug(
-      '[binding-Bluetooth]',
-      'Disconnecting from Device:',
-      element.device
-    );
-    await element.disconnect();
-  }
-  // Remove all items from connected_devices
-  connected_devices.length = 0;
-  connected_macs.length = 0;
-  connected_gattserver.length = 0;
-};
-
-/**
- * Disconnects from all connected devices and stops all operations by node-ble.
- * Needed to exit programm after execution.
- */
-export const closeBluetooth = async function () {
-  await tearDown();
-  destroy();
 };

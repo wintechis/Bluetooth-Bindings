@@ -19,9 +19,9 @@ export default class BluetoothClient implements ProtocolClient {
    * @returns {Promise} Promise that resolves to the read value.
    */
   public async readResource(form: BluetoothForm): Promise<Content> {
-    const deconstructedForm = this.deconstructForm(form);
+    const deconstructedForm = deconstructForm(form);
 
-    let value = '';
+    let value: Buffer;
     console.debug(
       '[binding-Bluetooth]',
       `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
@@ -53,7 +53,7 @@ export default class BluetoothClient implements ProtocolClient {
     form: BluetoothForm,
     content: Content
   ): Promise<void> {
-    const deconstructedForm = this.deconstructForm(form);
+    const deconstructedForm = deconstructForm(form);
     let buffer: Buffer;
     //Convert readableStreamToBuffer
     if (typeof content != 'undefined') {
@@ -127,7 +127,7 @@ export default class BluetoothClient implements ProtocolClient {
   }
 
   public async unlinkResource(form: BluetoothForm): Promise<void> {
-    const deconstructedForm = this.deconstructForm(form);
+    const deconstructedForm = deconstructForm(form);
 
     console.debug(
       '[binding-Bluetooth]',
@@ -154,7 +154,7 @@ export default class BluetoothClient implements ProtocolClient {
     error?: (error: Error) => void,
     complete?: () => void
   ): Promise<Subscription> {
-    const deconstructedForm = this.deconstructForm(form);
+    const deconstructedForm = deconstructForm(form);
 
     if (deconstructedForm.ble_operation !== 'notify') {
       throw new Error(
@@ -191,7 +191,7 @@ export default class BluetoothClient implements ProtocolClient {
       };
       next(content);
     });
-    
+
     return new Subscription(() => {});
   }
 
@@ -209,36 +209,36 @@ export default class BluetoothClient implements ProtocolClient {
   ): boolean {
     return false;
   }
-
-  /**
-   * Deconsructs form in object
-   * @param {Form} form form to analyze
-   * @returns {Object} Object containing all parameters
-   */
-  private deconstructForm = function (form: BluetoothForm) {
-    const deconstructedForm: Record<string, any> = {};
-
-    // Remove gatt://
-    deconstructedForm.path = form.href.split('//')[1];
-
-    // DeviceId is mac of device. Add ':'
-    // e.g. c0-3c-59-a8-91-06  -> c0:3c:59:a8:91:06
-    deconstructedForm.deviceId = deconstructedForm.path.split('/')[0]
-    deconstructedForm.deviceId = deconstructedForm.deviceId.toUpperCase()
-    deconstructedForm.deviceId = deconstructedForm.deviceId.replaceAll("-", ':')
-
-    // Extract serviceId
-    deconstructedForm.serviceId = deconstructedForm.path.split('/')[1];
-
-    // Extract characteristicId
-    deconstructedForm.characteristicId = deconstructedForm.path.split('/')[2];
-
-    // Extract operation -> e.g. readproperty; writeproperty
-    deconstructedForm.operation = form.op;
-
-    // Get BLE operation type
-    deconstructedForm.ble_operation = form['bt:methodName'];
-
-    return deconstructedForm;
-  };
 }
+
+/**
+ * Deconsructs form in object
+ * @param {Form} form form to analyze
+ * @returns {Object} Object containing all parameters
+ */
+export const deconstructForm = function (form: BluetoothForm) {
+  const deconstructedForm: Record<string, any> = {};
+
+  // Remove gatt://
+  deconstructedForm.path = form.href.split('//')[1];
+
+  // DeviceId is mac of device. Add ':'
+  // e.g. c0-3c-59-a8-91-06  -> c0:3c:59:a8:91:06
+  deconstructedForm.deviceId = deconstructedForm.path.split('/')[0];
+  deconstructedForm.deviceId = deconstructedForm.deviceId.toUpperCase();
+  deconstructedForm.deviceId = deconstructedForm.deviceId.replaceAll('-', ':');
+
+  // Extract serviceId
+  deconstructedForm.serviceId = deconstructedForm.path.split('/')[1];
+
+  // Extract characteristicId
+  deconstructedForm.characteristicId = deconstructedForm.path.split('/')[2];
+
+  // Extract operation -> e.g. readproperty; writeproperty
+  deconstructedForm.operation = form.op;
+
+  // Get BLE operation type
+  deconstructedForm.ble_operation = form['bt:methodName'];
+
+  return deconstructedForm;
+};

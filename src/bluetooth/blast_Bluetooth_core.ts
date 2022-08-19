@@ -4,10 +4,7 @@
 
 const {createBluetooth} = require('node-ble');
 
-import {
-  stay_connected_arr,
-  cons
-} from './blast_Bluetooth';
+import {stay_connected_arr, cons} from './blast_Bluetooth';
 
 export const {bluetooth, destroy} = createBluetooth();
 
@@ -71,10 +68,10 @@ const connect = async function (id: string) {
       console.debug('[binding-Bluetooth]', `Connecting to ${id}`, 'Bluetooth');
       await device.connect();
       const gattServer = await device.gatt();
-      // if id/mac in stay_connected_arr save connection
-      if (id in stay_connected_arr) {
-        cons[id] = [device, gattServer]
-      }
+
+      // Save connection
+      cons[id] = [device, gattServer];
+
       return gattServer;
     }
   } catch (error) {

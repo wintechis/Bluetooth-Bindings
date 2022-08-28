@@ -45,9 +45,9 @@ The http Vocablary is based on the http ontology with prefix "htv". Similar to t
 
 ### BLE Vocabulary Terms
 
-This section describes the vocabulary used in the Bluetooth protocol.
+This section covers the vocabularies used to describe the Bluetooth protocol and the binary data.
 
-The prefered prefix for the ontology is <code>bt</code>.
+The prefered prefix for the Bluetooth ontology is <code>bt</code> and for the binary data ontology <code>bdo</code>.
 
 #### Form terms
 
@@ -55,15 +55,19 @@ The prefered prefix for the ontology is <code>bt</code>.
 | --------------- | ------------------------- | ---------- | ------ |
 | bt:methodName   | BLE method name (Literal) | required   | string |
 
+Allowed values are <code>read</code>, <code>write</code>, <code>write-without-response</code>, <code>notify</code>.
+
 #### Metadata?
 
-| Vocabulary term | Description                                | Assignment                     | Type                                                  |
-| --------------- | ------------------------------------------ | ------------------------------ | ----------------------------------------------------- |
-| bt:signed       | Is the binary data singed?                 | required                       | boolean                                               |
-| bt:byteOrder    | The byte order of the binary data          | required                       | string                                                |
-| bt:scale        | Scale of received integer value            | optional                       | float                                                 |
-| bt:pattern      | The byte pattern of the binary data        | optional                       | string                                                |
-| bt:variable     | Description of the variables in bt:pattern | required if bt:pattern is used | ?                                                     |
+| Vocabulary term | Description                                 | Assignment                      | Type    |
+| --------------- | ------------------------------------------- | ------------------------------- | ------- |
+| bdo:bytelength  | How many octets are there in the data       | optional                        | integer |
+| bdo:signed      | Is the binary data singed?                  | required                        | boolean |
+| bdo:byteOrder   | The byte order of the binary data           | required                        | string  |
+| bdo:scale       | Scale of received integer value             | optional                        | float   |
+| bdo:offset      | Offset in byte                              | optional                        | integer |
+| bdo:pattern     | The byte pattern of the binary data         | optional                        | string  |
+| bdo:variable    | Description of the variables in bdo:pattern | required if bdo:pattern is used | ?       |
 
 ##### Allowed Dataformats
 
@@ -177,5 +181,4 @@ With this setup a there are two interaction possibilities for a client.
 ## TODOs:
 
 - implement read descriptor?
-- Test connect to multiple devices
 - create td for more GATT devices!

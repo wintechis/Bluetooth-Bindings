@@ -39,17 +39,14 @@ According to [RFC2046](https://www.rfc-editor.org/rfc/rfc2046.html):
 
 We use: "application/x.ble-octet-stream"
 
-## Bluetooth Vocabulary
+## Vocabulary
 
 The http Vocablary is based on the http ontology with prefix "htv". Similar to this we want to create an ontology for bluetooth.
-
-### BLE Vocabulary Terms
-
 This section covers the vocabularies used to describe the Bluetooth protocol and the binary data.
 
-The prefered prefix for the Bluetooth ontology is <code>bt</code> and for the binary data ontology <code>bdo</code>.
+### BLE Vocabulary
 
-#### Form terms
+The prefered prefix for the Bluetooth ontology is <code>bt</code>.
 
 | Vocabulary term | Description               | Assignment | Type   |
 | --------------- | ------------------------- | ---------- | ------ |
@@ -57,15 +54,17 @@ The prefered prefix for the Bluetooth ontology is <code>bt</code> and for the bi
 
 Allowed values are <code>read</code>, <code>write</code>, <code>write-without-response</code>, <code>notify</code>.
 
-#### Metadata?
+### Binary Data Vocabulary
+
+The prefered prefix for the binary data ontology is <code>bdo</code>.
 
 | Vocabulary term | Description                                 | Assignment                      | Type    |
 | --------------- | ------------------------------------------- | ------------------------------- | ------- |
-| bdo:bytelength  | How many octets are there in the data       | optional                        | integer |
-| bdo:signed      | Is the binary data singed?                  | required                        | boolean |
-| bdo:byteOrder   | The byte order of the binary data           | required                        | string  |
+| bdo:bytelength  | Number of octets in the data                | required                        | integer |
+| bdo:signed      | Indicates if the data is signed             | required                        | boolean |
+| bdo:byteOrder   | Byte order of the binary data               | required                        | string  |
 | bdo:scale       | Scale of received integer value             | optional                        | float   |
-| bdo:offset      | Offset in byte                              | optional                        | integer |
+| bdo:offset      | Offset in number of octets                  | optional                        | integer |
 | bdo:pattern     | The byte pattern of the binary data         | optional                        | string  |
 | bdo:variable    | Description of the variables in bdo:pattern | required if bdo:pattern is used | ?       |
 

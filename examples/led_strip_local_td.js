@@ -16,7 +16,8 @@ const td = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
     'https://www.w3.org/2022/wot/td/v1.1',
-    {bt: 'http://example.org/bt#'},
+    {sbo: 'http://example.org/simple-bluetooth-ontology#',
+     bdo: 'http://example.org/binary-data-ontology#'},
     {'@language': 'en'},
   ],
   title: 'BLE RGB Controller',
@@ -39,28 +40,23 @@ const td = {
       writeOnly: true,
       description: 'The colour of the LED light.',
 
-      'bt:pattern': '7e000503{R}{G}{B}00ef',
-      'bt:variables': {
+      'bdo:pattern': '7e000503{R}{G}{B}00ef',
+      'bdo:variables': {
         R: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
         G: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
         B: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
@@ -69,7 +65,7 @@ const td = {
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -84,21 +80,20 @@ const td = {
       writeOnly: true,
       description: 'The power switch of the controller.',
 
-      'bt:pattern': '7e0004{is_on}00000000ef',
-      'bt:variables': {
+      'bdo:pattern': '7e0004{is_on}00000000ef',
+      'bdo:variables': {
         is_on: {
           type: 'integer',
           minimum: 0,
           maximum: 1,
-          'bt:bytelength': 1,
-          'bt:signed': false,
+          'bdo:bytelength': 1,
         },
       },
       forms: [
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -113,21 +108,20 @@ const td = {
       writeOnly: true,
       description: 'The effect of the LED light.',
 
-      'bt:pattern': '7e0003{type}03000000ef',
-      'bt:variables': {
+      'bdo:pattern': '7e0003{type}03000000ef',
+      'bdo:variables': {
         type: {
           type: 'integer',
           minimum: 128,
           maximum: 156,
-          'bt:bytelength': 1,
-          'bt:signed': false,
+          'bdo:bytelength': 1,
         },
       },
       forms: [
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -140,7 +134,6 @@ try {
     await sleep(1000);
     let thing = await WoT.consume(td);
     blast_Bluetooth.stayConnected(thing, true);
-
     
     // Write Effect
     await thing.writeProperty('effect', {type: 156});

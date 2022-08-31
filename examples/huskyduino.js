@@ -2,7 +2,7 @@
 // Required steps to create a servient for a client
 const {Servient, Helpers} = require('@node-wot/core');
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
-const blast_Bluetooth_core = require('../dist/src/bluetooth/blast_Bluetooth_core');
+const blast_Bluetooth = require('../dist/src/bluetooth/blast_Bluetooth');
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -15,7 +15,8 @@ const td = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
     'https://www.w3.org/2022/wot/td/v1.1',
-    {bt: 'http://example.org/bt#'},
+    {sbo: 'http://example.org/simple-bluetooth-ontology#',
+     bdo: 'http://example.org/binary-data-ontology#'},
     {'@language': 'en'},
   ],
   title: 'HuskyDuino',
@@ -38,20 +39,18 @@ const td = {
       minimum: 1,
       maximum: 7,
 
-      'bt:bytelength': 1,
-      'bt:signed': false,
-      'bt:byteOrder': 'little',
+      'bdo:bytelength': 1,
       forms: [
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
-          'bt:methodName': 'read',
+          'sbo:methodName': 'sbo:read',
           contentType: 'application/x.ble-octet-stream',
         },
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
           op: 'writeproperty',
-          'bt:methodName': 'write-without-response',
+          'sbo:methodName': 'sbo:write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -67,7 +66,7 @@ const td = {
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
-          'bt:methodName': 'read',
+          'sbo:methodName': 'sbo:read',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -82,14 +81,12 @@ const td = {
       minimum: 0,
       maximum: 255,
 
-      'bt:bytelength': 1,
-      'bt:signed': false,
-      'bt:byteOrder': 'little',
+      'bdo:bytelength': 1,
       forms: [
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35eca-f9b0-11eb-9a03-0242ac130003',
           op: 'writeproperty',
-          'bt:methodName': 'write-without-response',
+          'sbo:methodName': 'sbo:write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -106,7 +103,7 @@ const td = {
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
-          'bt:methodName': 'read',
+          'sbo:methodName': 'sbo:read',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -127,7 +124,7 @@ const td = {
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be361b8-f9b0-11eb-9a03-0242ac130003',
           op: 'invokeaction',
-          'bt:methodName': 'write-without-response',
+          'sbo:methodName': 'sbo:write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -138,6 +135,8 @@ const td = {
 try {
   servient.start().then(async WoT => {
     let thing = await WoT.consume(td);
+    blast_Bluetooth.stayConnected(thing, true)
+    
     // set algorithm to 0
     await thing.writeProperty('algorithm', 0);
 
@@ -164,7 +163,7 @@ try {
     await sleep(2000);
 
     // Close connection
-    await blast_Bluetooth_core.closeBluetooth();
+    await blast_Bluetooth.closeBluetooth();
   });
 } catch (err) {
   console.error('Script error:', err);

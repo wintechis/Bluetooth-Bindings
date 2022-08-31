@@ -4,7 +4,7 @@
 
 const {createBluetooth} = require('node-ble');
 
-import {stay_connected_arr, cons} from './blast_Bluetooth';
+import {connection_established_obj} from './blast_Bluetooth';
 
 export const {bluetooth, destroy} = createBluetooth();
 
@@ -54,7 +54,7 @@ export const getDeviceById = async function (id: string) {
 const connect = async function (id: string) {
   // Check if already connected
   try {
-    if (id in cons) {
+    if (id in connection_established_obj) {
       console.debug(
         '[binding-Bluetooth]',
         `Device ${id} already connected`,
@@ -62,7 +62,7 @@ const connect = async function (id: string) {
       );
 
       // return GattServer of device with id
-      return cons[id][1];
+      return connection_established_obj[id][1];
     } else {
       const device: any = await getDeviceById(id);
       console.debug('[binding-Bluetooth]', `Connecting to ${id}`, 'Bluetooth');
@@ -70,7 +70,7 @@ const connect = async function (id: string) {
       const gattServer = await device.gatt();
 
       // Save connection
-      cons[id] = [device, gattServer];
+      connection_established_obj[id] = [device, gattServer];
 
       return gattServer;
     }

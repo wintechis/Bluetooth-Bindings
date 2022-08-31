@@ -13,7 +13,10 @@ const td_husky = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
     'https://www.w3.org/2022/wot/td/v1.1',
-    {bt: 'http://example.org/bt#'},
+    {
+      sbo: 'http://example.org/simple-bluetooth-ontology#',
+      bdo: 'http://example.org/binary-data-ontology#',
+    },
     {'@language': 'en'},
   ],
   title: 'HuskyDuino',
@@ -36,20 +39,18 @@ const td_husky = {
       minimum: 1,
       maximum: 7,
 
-      'bt:bytelength': 1,
-      'bt:signed': false,
-      'bt:byteOrder': 'little',
+      'bdo:bytelength': 1,
       forms: [
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
-          'bt:methodName': 'read',
+          'sbo:methodName': 'sbo:read',
           contentType: 'application/x.ble-octet-stream',
         },
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35d26-f9b0-11eb-9a03-0242ac130003',
           op: 'writeproperty',
-          'bt:methodName': 'write-without-response',
+          'sbo:methodName': 'sbo:write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -65,7 +66,7 @@ const td_husky = {
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
-          'bt:methodName': 'read',
+          'sbo:methodName': 'sbo:read',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -80,14 +81,12 @@ const td_husky = {
       minimum: 0,
       maximum: 255,
 
-      'bt:bytelength': 1,
-      'bt:signed': false,
-      'bt:byteOrder': 'little',
+      'bdo:bytelength': 1,
       forms: [
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be35eca-f9b0-11eb-9a03-0242ac130003',
           op: 'writeproperty',
-          'bt:methodName': 'write-without-response',
+          'sbo:methodName': 'sbo:write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -104,7 +103,7 @@ const td_husky = {
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be3628a-f9b0-11eb-9a03-0242ac130003',
           op: 'readproperty',
-          'bt:methodName': 'read',
+          'sbo:methodName': 'sbo:read',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -125,7 +124,7 @@ const td_husky = {
         {
           href: 'gatt://6A-7A-34-B0-D0-DB/5be35d20-f9b0-11eb-9a03-0242ac130003/5be361b8-f9b0-11eb-9a03-0242ac130003',
           op: 'invokeaction',
-          'bt:methodName': 'write-without-response',
+          'sbo:methodName': 'sbo:write-without-response',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -137,7 +136,10 @@ const td_rgb_strip = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
     'https://www.w3.org/2022/wot/td/v1.1',
-    {bt: 'http://example.org/bt#'},
+    {
+      sbo: 'http://example.org/simple-bluetooth-ontology#',
+      bdo: 'http://example.org/binary-data-ontology#',
+    },
     {'@language': 'en'},
   ],
   title: 'BLE RGB Controller',
@@ -160,28 +162,23 @@ const td_rgb_strip = {
       writeOnly: true,
       description: 'The colour of the LED light.',
 
-      'bt:pattern': '7e000503{R}{G}{B}00ef',
-      'bt:variables': {
+      'bdo:pattern': '7e000503{R}{G}{B}00ef',
+      'bdo:variables': {
         R: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
         G: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
         B: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
@@ -190,7 +187,7 @@ const td_rgb_strip = {
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -205,21 +202,20 @@ const td_rgb_strip = {
       writeOnly: true,
       description: 'The power switch of the controller.',
 
-      'bt:pattern': '7e0004{is_on}00000000ef',
-      'bt:variables': {
+      'bdo:pattern': '7e0004{is_on}00000000ef',
+      'bdo:variables': {
         is_on: {
           type: 'integer',
           minimum: 0,
           maximum: 1,
-          'bt:bytelength': 1,
-          'bt:signed': false,
+          'bdo:bytelength': 1,
         },
       },
       forms: [
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -234,21 +230,20 @@ const td_rgb_strip = {
       writeOnly: true,
       description: 'The effect of the LED light.',
 
-      'bt:pattern': '7e0003{type}03000000ef',
-      'bt:variables': {
+      'bdo:pattern': '7e0003{type}03000000ef',
+      'bdo:variables': {
         type: {
           type: 'integer',
           minimum: 128,
           maximum: 156,
-          'bt:bytelength': 1,
-          'bt:signed': false,
+          'bdo:bytelength': 1,
         },
       },
       forms: [
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -259,10 +254,9 @@ const td_rgb_strip = {
 try {
   servient.start().then(async WoT => {
     let rgbStrip = await WoT.consume(td_rgb_strip);
-
+    blast_Bluetooth.stayConnected(rgbStrip, true);
     let huskyduino = await WoT.consume(td_husky);
     blast_Bluetooth.stayConnected(huskyduino, true);
-
 
     // Read currently visible face
     let face = await huskyduino.readProperty('id');
@@ -270,17 +264,17 @@ try {
     tmp = tmp.split('(')[0];
     console.log('FACE with ID: ', tmp);
 
-    await sleep(2000)
+    await sleep(2000);
 
-    // Check if ID is 1 (learned before)
-    if (tmp === '1') {
+    // Check if ID is 2 (learned before)
+    if (tmp === '2') {
       await rgbStrip.writeProperty('colour', {R: 0, G: 255, B: 0});
     } else {
       await rgbStrip.writeProperty('colour', {R: 255, G: 0, B: 0});
     }
 
-    await sleep(2000)
-    
+    await sleep(2000);
+
     // Close connection
     await blast_Bluetooth.closeBluetooth();
   });

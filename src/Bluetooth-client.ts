@@ -69,7 +69,7 @@ export default class BluetoothClient implements ProtocolClient {
 
     // Select what operation should be executed
     switch (deconstructedForm.ble_operation) {
-      case 'write':
+      case 'sbo:write':
         console.debug(
           '[binding-Bluetooth]',
           `invoking writeWithResponse with value ${buffer.toString()}`
@@ -82,7 +82,7 @@ export default class BluetoothClient implements ProtocolClient {
           buffer
         );
         break;
-      case 'write-without-response':
+      case 'sbo:write-without-response':
         console.debug(
           '[binding-Bluetooth]',
           `invoking writeWithoutResponse with value ${buffer.toString()}`
@@ -156,7 +156,7 @@ export default class BluetoothClient implements ProtocolClient {
   ): Promise<Subscription> {
     const deconstructedForm = deconstructForm(form);
 
-    if (deconstructedForm.ble_operation !== 'notify') {
+    if (deconstructedForm.ble_operation !== 'sbo:notify') {
       throw new Error(
         `[binding-Bluetooth] operation ${deconstructedForm.ble_operation} is not supported`
       );
@@ -238,7 +238,7 @@ export const deconstructForm = function (form: BluetoothForm) {
   deconstructedForm.operation = form.op;
 
   // Get BLE operation type
-  deconstructedForm.ble_operation = form['bt:methodName'];
+  deconstructedForm.ble_operation = form['sbo:methodName'];
 
   return deconstructedForm;
 };

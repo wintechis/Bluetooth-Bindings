@@ -6,9 +6,11 @@ import {getCharacteristic, destroy} from './blast_Bluetooth_core';
 
 import {deconstructForm} from '../Bluetooth-client';
 
+// Array stors mac of devices that should stay connected
 export let stay_connected_arr: Record<string, string> = {};
 
-export let cons: Record<string, any> = {};
+// object to store connection details
+export let connection_established_obj: Record<string, any> = {};
 
 /**
  * Read functionality
@@ -158,14 +160,14 @@ export const get_td_from_device = async function (id: string) {
  * Disconnects from all connected devices.
  */
 export const disconnectAll = async function () {
-  for (const [key, value] of Object.entries(cons)) {
+  for (const [key, value] of Object.entries(connection_established_obj)) {
     console.debug('[binding-Bluetooth]', 'Disconnecting from Device:', key);
     await value[0].disconnect();
   }
 
   // Remove all items from connected_devices
-  for (const key in cons) {
-    delete cons[key];
+  for (const key in connection_established_obj) {
+    delete connection_established_obj[key];
   }
 };
 
@@ -177,14 +179,14 @@ export const disconnectAll = async function () {
 export const disconnectByMac = async function (id: string) {
   // Check if Thing is connected
   // get device
-  if (id in cons) {
+  if (id in connection_established_obj) {
     // disconnect
-    const device = cons[id][0];
+    const device = connection_established_obj[id][0];
     await device.disconnect();
     console.debug('[binding-Bluetooth]', 'Disconnecting from Device:', id);
 
     // remove from arrays
-    delete cons[id];
+    delete connection_established_obj[id];
   }
 };
 
@@ -211,7 +213,6 @@ export const closeBluetooth = async function () {
  * Add mac to stay_connected_list.
  * @param {object} Thing Thing instance of device.
  */
-
 export const stayConnected = function (Thing: any, flag: boolean) {
   const mac = extractMac(Thing);
 

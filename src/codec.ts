@@ -19,8 +19,15 @@ export class BLEBinaryCodec implements ContentCodec {
       parsed = byte2int(schema, bytes);
     }
 
-    if (schema.type == 'string') {
+    else if (schema.type == 'string') {
       parsed = byte2string(schema, bytes);
+    }
+
+    // Used if scale leads to float number, instead of int
+    else if (schema.type == "number"){
+      parsed = byte2int(schema, bytes);
+    } else{
+      throw new Error('Datatype not supported by codec');
     }
     return parsed;
   }
@@ -35,7 +42,7 @@ export class BLEBinaryCodec implements ContentCodec {
     let hexString: string;
 
     // Check if pattern is provieded and fill in
-    if (typeof schema['bt:pattern'] != 'undefined') {
+    if (typeof schema['bdo:pattern'] != 'undefined') {
       // String Pattern
       if (schema.type == 'string') {
         hexString = fillStringPattern(schema, dataValue);
@@ -67,11 +74,15 @@ export class BLEBinaryCodec implements ContentCodec {
  * @return {Integer} converted byte value.
  */
 function byte2int(schema: DataSchema, bytes: Buffer) {
-  const bytelength = schema['bt:bytelength'];
-  const signed = schema['bt:signed'];
-  const byteOrder = schema['bt:byteOrder'] || 'little';
-  const scale = schema['bt:scale'] || 1;
-  const offset = schema['bt:offset'] || 0;
+  const bytelength = schema['bdo:bytelength'];
+  const signed = schema['bdo:signed'] || false;
+  const byteOrder = schema['bdo:byteOrder'] || 'little';
+  const scale = schema['bdo:scale'] || 1;
+  const offset = schema['bdo:offset'] || 0;
+  
+  if (typeof bytelength == 'undefined') {
+    throw new Error('Not all parameters are provided!');
+  }
 
   let parsed: number;
 
@@ -101,17 +112,13 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
  * @return {Integer} converted byte value.
  */
 function int2byte(schema: DataSchema, dataValue: number) {
-  const bytelength = schema['bt:bytelength'];
-  const signed = schema['bt:signed'];
-  const byteOrder = schema['bt:byteOrder'] || 'little';
-  const scale = schema['bt:scale'] || 1;
-  const offset = schema['bt:offset'] || 0;
+  const bytelength = schema['bdo:bytelength'];
+  const signed = schema['bdo:signed'] || false;
+  const byteOrder = schema['bdo:byteOrder'] || 'little';
+  const scale = schema['bdo:scale'] || 1;
+  const offset = schema['bdo:offset'] || 0;
 
-  if (
-    typeof bytelength == 'undefined' ||
-    typeof signed == 'undefined' ||
-    typeof byteOrder == 'undefined'
-  ) {
+  if (typeof bytelength == 'undefined') {
     throw new Error('Not all parameters are provided!');
   }
 
@@ -144,7 +151,7 @@ function fillStringPattern(schema: DataSchema, dataValue: any) {
   let key: string;
   let params: any;
   // Iterate over provided parameters and convert to hex string
-  for ([key, params] of Object.entries(schema['bt:variables'])) {
+  for ([key, params] of Object.entries(schema['bdo:variables'])) {
     // Convert integer values to hex string
     if (params.type == 'integer') {
       let buf = int2byte(params, dataValue[key]);
@@ -154,7 +161,7 @@ function fillStringPattern(schema: DataSchema, dataValue: any) {
   }
 
   //Fill in pattern
-  const template = UriTemplate.parse(schema['bt:pattern']);
+  const template = UriTemplate.parse(schema['bdo:pattern']);
   // replace dataValue object with filled in pattern
   dataValue = template.expand(dataValue);
 

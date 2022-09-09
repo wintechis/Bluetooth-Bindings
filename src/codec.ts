@@ -174,6 +174,7 @@ function string2byte(schema: DataSchema, dataValue: string) {
   if (typeof schema.format == 'undefined') {
     buf = Buffer.from(dataValue, 'utf-8');
   } else if (schema.format == 'hex') {
+
     buf = Buffer.from(dataValue, 'hex');
   }
   return buf;

@@ -4,9 +4,8 @@ import {BluetoothForm} from './Bluetooth.js';
 import {Subscription} from 'rxjs';
 import {Readable} from 'stream';
 
-//import {write} from './bluetooth/ble';
-import {read, write} from './bluetooth/blast_Bluetooth';
-import {getCharacteristic} from './bluetooth/blast_Bluetooth_core';
+import {read, write} from './bluetooth/Bluetooth_lib';
+import {getCharacteristic} from './bluetooth/Bluetooth_core_lib';
 
 export default class BluetoothClient implements ProtocolClient {
   public toString(): string {

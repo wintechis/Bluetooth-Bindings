@@ -2,7 +2,7 @@
 // Required steps to create a servient for a client
 const {Servient} = require('@node-wot/core');
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
-const blast_Bluetooth = require('../dist/src/bluetooth/blast_Bluetooth');
+const Bluetooth_lib = require('../dist/src/bluetooth/Bluetooth_lib');
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -10,7 +10,6 @@ function sleep(ms) {
 
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
-// Needed pattern: 7e000503{R}{G}{B}00ef
 
 const td = {
   '@context': [
@@ -131,9 +130,10 @@ const td = {
 
 try {
   servient.start().then(async WoT => {
-    await sleep(1000);
     let thing = await WoT.consume(td);
-    blast_Bluetooth.stayConnected(thing, true);
+    
+    // Connect to Device
+    await Bluetooth_lib.connectThing(thing);
     
     // Write Effect
     await thing.writeProperty('effect', {type: 156});
@@ -142,9 +142,6 @@ try {
     // Power off
     await thing.writeProperty('power', {is_on: 0});
     await sleep(3000);
-
-    // disconnect
-    await blast_Bluetooth.disconnectThing(thing)
     
     // Power on
     await thing.writeProperty('power', {is_on: 1});
@@ -159,8 +156,9 @@ try {
     await thing.writeProperty('colour', {R: 0, G: 0, B: 255});
     await sleep(3000);
     
+    
     // Close connection
-    await blast_Bluetooth.closeBluetooth();
+    await Bluetooth_lib.close();
   });
 } catch (err) {
   console.error('Script error:', err);

@@ -2,19 +2,13 @@
  * Functions for advanced bluetooth operations
  */
 
-import {getCharacteristic, destroy} from './blast_Bluetooth_core';
+import * as BLELibCore from './Bluetooth_core_lib';
 
 import {deconstructForm} from '../Bluetooth-client';
-
-// Array stors mac of devices that should stay connected
-export let stay_connected_arr: Record<string, string> = {};
 
 // object to store connection details
 export let connection_established_obj: Record<string, any> = {};
 
-/**
- * Read functionality
- */
 
 /**
  * Reads data from Bluetooth device using the gatt protocol.
@@ -28,7 +22,7 @@ export const read = async function (
   serviceUUID: string,
   characteristicUUID: string
 ) {
-  const characteristic: any = await getCharacteristic(
+  const characteristic: any = await BLELibCore.getCharacteristic(
     id,
     serviceUUID,
     characteristicUUID
@@ -45,15 +39,10 @@ export const read = async function (
     console.debug(
       '[binding-Bluetooth]',
       `Finished ReadValue on characteristic ${characteristicUUID}` +
-        ` from service ${serviceUUID} - value: ${buffer.toString()}`,
+        ` from service ${serviceUUID}}`,
       'Bluetooth',
       id
     );
-
-    // Disconnect
-    if (!(id in stay_connected_arr)) {
-      await disconnectByMac(id);
-    }
 
     return buffer;
   } catch (error) {
@@ -61,10 +50,6 @@ export const read = async function (
     throw new Error(`Error reading from Bluetooth device ${id}`);
   }
 };
-
-/**
- * Write functionality
- */
 
 /**
  * Writes data to Bluetooth device using the gatt protocol.
@@ -83,7 +68,7 @@ export const write = async function (
   withResponse: boolean,
   value: Buffer
 ) {
-  const characteristic: any = await getCharacteristic(
+  const characteristic: any = await BLELibCore.getCharacteristic(
     id,
     serviceUUID,
     characteristicUUID
@@ -97,7 +82,7 @@ export const write = async function (
       console.debug(
         '[binding-Bluetooth]',
         'Invoke WriteValueWithResponse on characteristic ' +
-          `${characteristicUUID} with value ${value.toString()}`,
+          `${characteristicUUID}}`,
         'Bluetooth',
         id
       );
@@ -105,7 +90,7 @@ export const write = async function (
       console.debug(
         '[binding-Bluetooth]',
         'Finished WriteValueWithResponse on characteristic ' +
-          `${characteristicUUID} with value ${value.toString()}`,
+          `${characteristicUUID}}`,
         'Bluetooth',
         id
       );
@@ -113,7 +98,7 @@ export const write = async function (
       console.debug(
         '[binding-Bluetooth]',
         'Invoke WriteValueWithoutResponse on characteristic ' +
-          `${characteristicUUID} with value ${value.toString()}`,
+          `${characteristicUUID}}`,
         'Bluetooth',
         id
       );
@@ -121,15 +106,10 @@ export const write = async function (
       console.debug(
         '[binding-Bluetooth]',
         'Finished WriteValueWithoutResponse on characteristic ' +
-          `${characteristicUUID} with value ${value.toString()}`,
+          `${characteristicUUID}}`,
         'Bluetooth',
         id
       );
-    }
-
-    // Disconnect
-    if (!(id in stay_connected_arr)) {
-      await disconnectByMac(id);
     }
   } catch (error) {
     const errorMsg =
@@ -140,35 +120,31 @@ export const write = async function (
 };
 
 /**
- * Reads a Thing Description from a Bluetooth device.
- * The TD should be located in under the WoT Service.
- * @param {BluetoothDevice.id} id identifier of the device to read from.
- * @returns {string} Uri of the Thing Description.
+ * Connects ta a selected device based on a Thing object.
+ * @param {object} Thing Thing instance of device.
  */
-export const get_td_from_device = async function (id: string) {
-  const WoT_Service = '1fc8f811-0000-4e89-8476-e0b2dad3179b';
-  const td_Char = '2ab6';
+export const connectThing = async function (Thing: any) {
+  // Get MAC of Thing
+  const mac = extractMac(Thing)
 
-  let value = await read(id, WoT_Service, td_Char);
+  // Check if discovery is active
+  if(await BLELibCore.getAdapterStatus() === false){
+    BLELibCore.startScan()
+  }
 
-  await disconnectAll();
+  // Connect
+  await BLELibCore.connect(mac)
 
-  return value.toString();
 };
 
 /**
- * Disconnects from all connected devices.
+ * Disconnects from a selected device based on a Thing object.
+ * @param {object} Thing Thing instance of device.
  */
-export const disconnectAll = async function () {
-  for (const [key, value] of Object.entries(connection_established_obj)) {
-    console.debug('[binding-Bluetooth]', 'Disconnecting from Device:', key);
-    await value[0].disconnect();
-  }
-
-  // Remove all items from connected_devices
-  for (const key in connection_established_obj) {
-    delete connection_established_obj[key];
-  }
+export const disconnectThing = async function (Thing: any) {
+  // Get Mac of Thing
+  const mac = extractMac(Thing);
+  await disconnectByMac(mac);
 };
 
 /**
@@ -176,7 +152,7 @@ export const disconnectAll = async function () {
  * @param {string} id identifier of the device to read from.
  */
 
-export const disconnectByMac = async function (id: string) {
+ export const disconnectByMac = async function (id: string) {
   // Check if Thing is connected
   // get device
   if (id in connection_established_obj) {
@@ -191,43 +167,33 @@ export const disconnectByMac = async function (id: string) {
 };
 
 /**
- * Disconnects from a selected device based on a Thing object.
- * @param {object} Thing Thing instance of device.
+ * Disconnects from all connected devices.
  */
-export const disconnectThing = async function (Thing: any) {
-  // Get Mac of Thing
-  const mac = extractMac(Thing);
-  await disconnectByMac(mac);
+ export const disconnectAll = async function () {
+  for (const [key, value] of Object.entries(connection_established_obj)) {
+    console.debug('[binding-Bluetooth]', 'Disconnecting from Device:', key);
+    await value[0].disconnect();
+  }
+
+  // Remove all items from connected_devices
+  for (const key in connection_established_obj) {
+    delete connection_established_obj[key];
+  }
 };
 
 /**
  * Disconnects from all connected devices and stops all operations by node-ble.
  * Needed to exit programm after execution.
  */
-export const closeBluetooth = async function () {
+export const close = async function () {
   await disconnectAll();
-  destroy();
-};
-
-/**
- * Add mac to stay_connected_list.
- * @param {object} Thing Thing instance of device.
- */
-export const stayConnected = function (Thing: any, flag: boolean) {
-  const mac = extractMac(Thing);
-
-  if (flag) {
-    // Add mac of Thing to stay_connected list
-    stay_connected_arr[mac] = mac;
-  } else {
-    // Remove mac of Thing to stay_connected list
-    delete stay_connected_arr[mac];
-  }
+  BLELibCore.destroy();
 };
 
 /**
  * Extract a mac address from a Thing instance.
  * @param {object} Thing Thing instance of device.
+ * @returns {string} MAC of device
  */
 const extractMac = function (Thing: any) {
   // Get MAC of device

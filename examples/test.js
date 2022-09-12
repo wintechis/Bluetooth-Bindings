@@ -1,8 +1,8 @@
 // client.js
 // Required steps to create a servient for a client
-const {Servient, Helpers} = require('@node-wot/core');
+const {Servient} = require('@node-wot/core');
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
-const blast_Bluetooth_core = require('../dist/src/bluetooth/blast_Bluetooth_core');
+const Bluetooth_lib = require('../dist/src/bluetooth/Bluetooth_lib');
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -10,13 +10,15 @@ function sleep(ms) {
 
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
-// Needed pattern: 7e000503{R}{G}{B}00ef
 
 const td = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
     'https://www.w3.org/2022/wot/td/v1.1',
-    {bt: 'http://example.org/bt#'},
+    {
+      sbo: 'http://example.org/simple-bluetooth-ontology#',
+      bdo: 'http://example.org/binary-data-ontology#',
+    },
     {'@language': 'en'},
   ],
   title: 'BLE RGB Controller',
@@ -39,29 +41,23 @@ const td = {
       writeOnly: true,
       description: 'The colour of the LED light.',
 
-      'bt:pattern': '7e000503{R}{G}{B}00ef',
-      'bt:variables': {
+      'bdo:pattern': '7e000503{R}{G}{B}00ef',
+      'bdo:variables': {
         R: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
         G: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
         B: {
           type: 'integer',
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
         },
@@ -70,7 +66,7 @@ const td = {
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -85,22 +81,20 @@ const td = {
       writeOnly: true,
       description: 'The power switch of the controller.',
 
-      'bt:pattern': '7e0004{is_on}00000000ef',
-      'bt:variables': {
+      'bdo:pattern': '7e0004{is_on}00000000ef',
+      'bdo:variables': {
         is_on: {
           type: 'integer',
           minimum: 0,
           maximum: 1,
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
         },
       },
       forms: [
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -115,22 +109,20 @@ const td = {
       writeOnly: true,
       description: 'The effect of the LED light.',
 
-      'bt:pattern': '7e0003{type}03000000ef',
-      'bt:variables': {
+      'bdo:pattern': '7e0003{type}03000000ef',
+      'bdo:variables': {
         type: {
           type: 'integer',
           minimum: 128,
           maximum: 156,
-          'bt:bytelength': 1,
-          'bt:signed': false,
-          'bt:byteOrder': 'little',
+          'bdo:bytelength': 1,
         },
       },
       forms: [
         {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
-          'bt:methodName': 'write',
+          'sbo:methodName': 'sbo:write',
           contentType: 'application/x.ble-octet-stream',
         },
       ],
@@ -140,71 +132,21 @@ const td = {
 
 try {
   servient.start().then(async WoT => {
-    await sleep(15000)
-    let arr =  []
+    // Consume TD
     let thing = await WoT.consume(td);
-    for (let i = 0; i < 40; i++) {
-      console.log("====================")
-      console.log("START", i)
-      console.log("====================")
 
-      const start = performance.now();
-      // Write Effect
-      await thing.writeProperty('effect', {type: 156});
-      //await sleep(3000);
+    // Connect to Device
+    await Bluetooth_lib.connectThing(thing);
 
-      // Power off
-      await thing.writeProperty('power', {is_on: 0});
-      //await sleep(3000);
+    // Write Property
+    await thing.writeProperty('colour', {R: 0, G: 0, B: 255});
 
-      // Power on
-      await thing.writeProperty('power', {is_on: 1});
-      //await sleep(3000);
+    // Disconnect Device
+    await Bluetooth_lib.disconnectThing(thing);
 
-      // Change color to RGB
-      await thing.writeProperty('colour', {R: 255, G: 0, B: 0});
-      //await sleep(3000);
-      await thing.writeProperty('colour', {R: 0, G: 255, B: 0});
-      //await sleep(3000);
-      await thing.writeProperty('colour', {R: 0, G: 0, B: 255});
-      //await sleep(3000);
-
-      // Close connection
-      await blast_Bluetooth_core.tearDown();
-
-      const end = performance.now();
-      arr.push(end - start)
-      //await sleep(3000);
-    }
-    //console.log(arr)
-    console.log("SUMME:", summe(arr))
-    console.log("Mittelwert:", summe(arr)/arr.length)
-    console.log("Standardabweichung:", standardabweichung(arr))
-
+    // Close connection
+    await Bluetooth_lib.closeBluetooth();
   });
 } catch (err) {
   console.error('Script error:', err);
-}
-
-function standardabweichung(arr){
-  let mean = summe(arr)/arr.length
-
-  // (x - mean)^2
-  let val = 0
-  for (let i = 0; i < arr.length; i++) {
-    val += (arr[i]-mean) ** 2
-  } 
-
-  // 1/(n-1) * val
-  let tmp = (1/(arr.length-1))*val
-  return Math.sqrt(tmp)
-}
-
-function summe(arr){
-  sum = 0
-  for (let i = 0; i < arr.length; i++) {
-    sum += arr[i]
-  } 
-
-  return sum;
 }

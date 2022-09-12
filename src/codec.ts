@@ -49,7 +49,7 @@ export class BLEBinaryCodec implements ContentCodec {
         buf = string2byte(schema, hexString);
       }
 
-      console.log('[CODEC]', 'Codec generated value:', hexString);
+      //console.log('[CODEC]', 'Codec generated value:', hexString);
     }
     // Else create buffer without pattern
     else {

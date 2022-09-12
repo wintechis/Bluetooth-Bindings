@@ -3,9 +3,7 @@ import {Form, SecurityScheme} from '@node-wot/td-tools';
 import {BluetoothForm} from './Bluetooth.js';
 import {Subscription} from 'rxjs';
 import {Readable} from 'stream';
-
-import {read, write} from './bluetooth/Bluetooth_lib';
-import {getCharacteristic} from './bluetooth/Bluetooth_core_lib';
+import * as BLELibCore from './bluetooth/Bluetooth_lib';
 
 export default class BluetoothClient implements ProtocolClient {
   public toString(): string {
@@ -20,20 +18,34 @@ export default class BluetoothClient implements ProtocolClient {
   public async readResource(form: BluetoothForm): Promise<Content> {
     const deconstructedForm = deconstructForm(form);
 
-    let value: Buffer;
+    let buffer: Buffer;
     console.debug(
       '[binding-Bluetooth]',
-      `invoking readInt with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+      `invoke read operation on characteristic ${deconstructedForm.characteristicId}` +
+        ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
     );
-    value = await read(
+
+    // Get Characteristic
+    const characteristic = await BLELibCore.getCharacteristic(
       deconstructedForm.deviceId,
       deconstructedForm.serviceId,
       deconstructedForm.characteristicId
     );
 
+    // Read Value
+    try {
+      buffer = await characteristic.readValue();
+    } catch (error) {
+      console.error(error);
+      throw new Error(
+        `Error reading from Bluetooth device ${deconstructedForm.characteristicId}`
+      );
+    }
+
+    // Convert to readable
     let s = new Readable();
-    s.push(value); // string to encode
-    s.push(null); // indicates end-of-file; end of the stream
+    s.push(buffer);
+    s.push(null);
     const body = ProtocolHelpers.toNodeStream(s as Readable);
 
     return {
@@ -54,6 +66,7 @@ export default class BluetoothClient implements ProtocolClient {
   ): Promise<void> {
     const deconstructedForm = deconstructForm(form);
     let buffer: Buffer;
+
     //Convert readableStreamToBuffer
     if (typeof content != 'undefined') {
       const chunks = [];
@@ -66,34 +79,37 @@ export default class BluetoothClient implements ProtocolClient {
       buffer = Buffer.alloc(1);
     }
 
+    // Get Characteristic
+    const characteristic = await BLELibCore.getCharacteristic(
+      deconstructedForm.deviceId,
+      deconstructedForm.serviceId,
+      deconstructedForm.characteristicId
+    );
+
     // Select what operation should be executed
     switch (deconstructedForm.ble_operation) {
       case 'sbo:write':
         console.debug(
           '[binding-Bluetooth]',
-          `invoking writeWithResponse with value ${buffer.toString()}`
+          `invoke write operation on characteristic ${deconstructedForm.characteristicId}` +
+            `from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
-        await write(
-          deconstructedForm.deviceId,
-          deconstructedForm.serviceId,
-          deconstructedForm.characteristicId,
-          true,
-          buffer
-        );
+
+        // write value with response
+        await characteristic.writeValue(buffer, {offset: 0, type: 'request'});
         break;
+
       case 'sbo:write-without-response':
         console.debug(
           '[binding-Bluetooth]',
-          `invoking writeWithoutResponse with value ${buffer.toString()}`
+          `invoke write-without-response operation on characteristic ${deconstructedForm.characteristicId}` +
+            `from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
-        await write(
-          deconstructedForm.deviceId,
-          deconstructedForm.serviceId,
-          deconstructedForm.characteristicId,
-          false,
-          buffer
-        );
+
+        // write value without response
+        await characteristic.writeValue(buffer, {offset: 0, type: 'command'});
         break;
+
       default: {
         throw new Error(
           `[binding-Bluetooth] unknown operation ${deconstructedForm.operation}`
@@ -130,10 +146,11 @@ export default class BluetoothClient implements ProtocolClient {
 
     console.debug(
       '[binding-Bluetooth]',
-      `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+      `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId 
+      ${deconstructedForm.characteristicId} on ${deconstructedForm.deviceId}`
     );
 
-    const characteristic = await getCharacteristic(
+    const characteristic = await BLELibCore.getCharacteristic(
       deconstructedForm.deviceId,
       deconstructedForm.serviceId,
       deconstructedForm.characteristicId
@@ -165,7 +182,7 @@ export default class BluetoothClient implements ProtocolClient {
       `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
     );
 
-    const characteristic = await getCharacteristic(
+    const characteristic = await BLELibCore.getCharacteristic(
       deconstructedForm.deviceId,
       deconstructedForm.serviceId,
       deconstructedForm.characteristicId

@@ -2,7 +2,7 @@
 
 ## Overview
 
-W3C Web of Things (WoT) compatible Protocol Binding for [Bluetooth LE](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy) to use with Node WoT. The WoT Binding Template can be found TODO: here.
+W3C Web of Things (WoT) compatible Protocol Bindings for [Bluetooth LE](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy) to use with  [node-wot](https://github.com/eclipse/thingweb.node-wot). 
 
 ## Protocol specifier
 

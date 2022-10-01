@@ -5,8 +5,8 @@
   "dependencies": {
     "@node-wot/core": "^0.8.1",
     "@types/node": "^18.0.6",
-    "dbus-next": "https://github.com/FreuMi/node-dbus-next.git",
-    "node-ble": "https://github.com/dorschre/node-ble.git",
+    "dbus-next": "github:FreuMi/node-dbus-next#f42ced4950d82b4973d86ba69e592a52d495e2a7",
+    "node-ble": "github:dorschre/node-ble#e9adc31c576d7a96371bee21c93e27bbbbfb6ffc",
     "typescript": "^4.7.4"
   }
 }

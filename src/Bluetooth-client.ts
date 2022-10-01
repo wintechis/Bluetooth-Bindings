@@ -49,7 +49,7 @@ export default class BluetoothClient implements ProtocolClient {
     const body = ProtocolHelpers.toNodeStream(s as Readable);
 
     return {
-      type: form.contentType || 'application/x.ble-octet-stream',
+      type: form.contentType || 'application/x.binary-data-stream',
       body: body,
     };
   }
@@ -202,7 +202,7 @@ export default class BluetoothClient implements ProtocolClient {
       s.push(null);
       const body = ProtocolHelpers.toNodeStream(s as Readable);
       const content = {
-        type: form.contentType || 'application/x.ble-octet-stream',
+        type: form.contentType || 'application/x.binary-data-stream',
         body: body,
       };
       next(content);

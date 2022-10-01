@@ -15,8 +15,12 @@ const td = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
     'https://www.w3.org/2022/wot/td/v1.1',
-    {sbo: 'http://example.org/simple-bluetooth-ontology#',
-     bdo: 'http://example.org/binary-data-ontology#'},
+    {
+      sbo: 'https://freumi.inrupt.net/SimpleBluetoothOntology.ttl#',
+      bdo: 'https://freumi.inrupt.net/BinaryDataOntology.ttl#',
+      qudt: '',
+      qudtUnit: '',
+    },
     {'@language': 'en'},
   ],
   title: 'BLE RGB Controller',
@@ -27,8 +31,16 @@ const td = {
       scheme: 'nosec',
     },
   },
-  '@type': 'Thing',
+  '@type': ['Thing', 'sbo:BluetoothLEDevice'],
   security: ['nosec_sc'],
+  
+  'sbo:hasGAPRole': 'sbo:Peripheral',
+  'sbo:isConnectable': true,
+  'sbo:hasAdvertisingIntervall': {
+    'qudt:numericValue': 50,
+    'qutdUnit:unit': 'qudtUnit:MilliSEC',
+  },
+
   properties: {
     colour: {
       type: 'string',
@@ -65,7 +77,7 @@ const td = {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'sbo:methodName': 'sbo:write',
-          contentType: 'application/x.ble-octet-stream',
+          contentType: 'application/x.binary-data-stream',
         },
       ],
     },
@@ -93,7 +105,7 @@ const td = {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'sbo:methodName': 'sbo:write',
-          contentType: 'application/x.ble-octet-stream',
+          contentType: 'application/x.binary-data-stream',
         },
       ],
     },
@@ -121,7 +133,7 @@ const td = {
           href: 'gatt://BE-58-30-00-CC-11/0000fff0-0000-1000-8000-00805f9b34fb/0000fff3-0000-1000-8000-00805f9b34fb',
           op: ['writeproperty'],
           'sbo:methodName': 'sbo:write',
-          contentType: 'application/x.ble-octet-stream',
+          contentType: 'application/x.binary-data-stream',
         },
       ],
     },
@@ -131,10 +143,10 @@ const td = {
 try {
   servient.start().then(async WoT => {
     let thing = await WoT.consume(td);
-    
+
     // Connect to Device
     await Bluetooth_lib.connectThing(thing);
-    
+
     // Write Effect
     await thing.writeProperty('effect', {type: 156});
     await sleep(3000);
@@ -142,7 +154,7 @@ try {
     // Power off
     await thing.writeProperty('power', {is_on: 0});
     await sleep(3000);
-    
+
     // Power on
     await thing.writeProperty('power', {is_on: 1});
     await sleep(3000);
@@ -155,8 +167,7 @@ try {
 
     await thing.writeProperty('colour', {R: 0, G: 0, B: 255});
     await sleep(3000);
-    
-    
+
     // Close connection
     await Bluetooth_lib.close();
   });

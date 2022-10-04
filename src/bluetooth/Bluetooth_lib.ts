@@ -211,7 +211,6 @@ export const disconnectThing = async function (Thing: any) {
  * Disconnects from a selected device based on a mac address.
  * @param {string} id identifier of the device to read from.
  */
-
 export const disconnectByMac = async function (id: string) {
   // Check if Thing is connected
   // get device

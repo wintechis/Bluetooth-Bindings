@@ -130,7 +130,6 @@ export default class BluetoothClient implements ProtocolClient {
   ): Promise<Content> {
     // Call writeRessource
     await this.writeResource(form, content);
-    // Output will probably not be returned
     let s = new Readable();
     s.push('');
     s.push(null);
@@ -157,8 +156,6 @@ export default class BluetoothClient implements ProtocolClient {
     );
 
     await characteristic.stopNotifications();
-
-    //throw new Error("not implemented");
   }
 
   /**

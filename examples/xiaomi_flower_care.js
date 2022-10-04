@@ -1,5 +1,4 @@
-// client.js
-// Required steps to create a servient for a client
+// client for Xiaomi Flower Care Sensor
 const {Servient} = require('@node-wot/core');
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
 const Bluetooth_lib = require('../dist/src/bluetooth/Bluetooth_lib');
@@ -28,6 +27,14 @@ const td = {
   },
   '@type': 'Thing',
   security: ['nosec_sc'],
+
+  'sbo:hasGAPRole': 'sbo:Peripheral',
+  'sbo:isConnectable': true,
+  'sbo:hasAdvertisingIntervall': {
+    'qudt:numericValue': 2000,
+    'qutdUnit:unit': 'qudtUnit:MilliSEC',
+  },
+
   properties: {
     valueString: {
       type: 'array',
@@ -43,18 +50,22 @@ const td = {
           type: 'integer',
           'bdo:bytelength': 2,
           'bdo:scale': 0.1,
+          description: 'The current temperature value.',
         },
         brightness: {
           type: 'integer',
           'bdo:bytelength': 4,
+          description: 'The current brightness value.',
         },
         moisture: {
           type: 'integer',
           'bdo:bytelength': 1,
+          description: 'The current moisture value.',
         },
         conduct: {
           type: 'integer',
           'bdo:bytelength': 2,
+          description: 'The current conductivity value.',
         },
       },
       forms: [
@@ -80,6 +91,7 @@ const td = {
         format: 'hex',
         enum: ['A01F'],
         'bdo:bytelength': 2,
+        description: 'The command "A01F" enables write mode.',
       },
 
       forms: [
@@ -114,7 +126,7 @@ try {
     console.log('Moisture:', val[2], '%');
     console.log('Conductivity:', val[3], 'µS/cm');
 
-    // Disconnect & Close connection
+    // Close connection
     await Bluetooth_lib.close();
   });
 } catch (err) {

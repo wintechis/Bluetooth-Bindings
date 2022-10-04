@@ -1,5 +1,4 @@
-// client.js
-// Required steps to create a servient for a client
+// client for a BLE RBG LED controller
 const {Servient} = require('@node-wot/core');
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
 const Bluetooth_lib = require('../dist/src/bluetooth/Bluetooth_lib');
@@ -33,7 +32,7 @@ const td = {
   },
   '@type': ['Thing', 'sbo:BluetoothLEDevice'],
   security: ['nosec_sc'],
-  
+
   'sbo:hasGAPRole': 'sbo:Peripheral',
   'sbo:isConnectable': true,
   'sbo:hasAdvertisingIntervall': {
@@ -58,18 +57,21 @@ const td = {
           'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
+          description: 'Red value.',
         },
         G: {
           type: 'integer',
           'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
+          description: 'Green value.',
         },
         B: {
           type: 'integer',
           'bdo:bytelength': 1,
           minimum: 0,
           maximum: 255,
+          description: 'Blue value.',
         },
       },
       forms: [

@@ -1,6 +1,4 @@
 import {ContentCodec} from '@node-wot/core';
-import {parse} from 'path';
-import {buffer} from 'stream/consumers';
 import {DataSchema, DataSchemaValue} from 'wot-typescript-definitions';
 const UriTemplate = require('uritemplate');
 
@@ -74,11 +72,8 @@ export class BLEBinaryCodec implements ContentCodec {
     // Check if pattern is provieded and fill in
     if (typeof schema['bdo:pattern'] != 'undefined') {
       // String Pattern
-
       hexString = fillStringPattern(schema, dataValue);
       buf = string2byte(schema, hexString);
-
-      //console.log('[CODEC]', 'Codec generated value:', hexString);
     }
     // Else create buffer without pattern
     else {
@@ -230,8 +225,6 @@ function readPattern(schema: DataSchema, bytes: Buffer) {
   return [variable_name_list, res];
 }
 
-function extractVariableNames(template: string) {}
-
 // Function fills in the desired pattern
 // return filled in hexString
 function fillStringPattern(schema: DataSchema, dataValue: any) {
@@ -276,6 +269,3 @@ function byte2string(schema: DataSchema, bytes: Buffer) {
   }
   return value;
 }
-// TODO
-// scale?
-// readpattern

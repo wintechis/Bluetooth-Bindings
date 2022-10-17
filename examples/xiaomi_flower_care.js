@@ -79,19 +79,19 @@ const td = {
     },
   },
   actions: {
-    writeMode: {
+    readMode: {
       type: 'string',
       observable: false,
       readOnly: false,
       writeOnly: true,
-      description: 'Enable write mode',
+      description: 'Enable read mode',
 
       input: {
         type: 'string',
         format: 'hex',
         enum: ['A01F'],
         'bdo:bytelength': 2,
-        description: 'The command "A01F" enables write mode.',
+        description: 'The command "A01F" enables read mode.',
       },
 
       forms: [
@@ -113,8 +113,8 @@ try {
     // Connect to Device
     await Bluetooth_lib.connectThing(thing);
 
-    // Activate Write Mode
-    await thing.invokeAction('writeMode', 'A01F');
+    // Activate Read Mode
+    await thing.invokeAction('readMode', 'A01F');
 
     // Read Property
     let val = await thing.readProperty('valueString');

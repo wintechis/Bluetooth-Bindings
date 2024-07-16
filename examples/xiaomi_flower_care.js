@@ -6,6 +6,8 @@ const Bluetooth_lib = require('../dist/src/bluetooth/Bluetooth_lib');
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
 
+const IP = "5C-85-7E-B0-25-EB"
+
 const td = {
   '@context': [
     'https://www.w3.org/2019/wot/td/v1',
@@ -70,7 +72,7 @@ const td = {
       },
       forms: [
         {
-          href: 'gatt://C4-7C-8D-6D-7D-F8/00001204-0000-1000-8000-00805f9b34fb/00001a01-0000-1000-8000-00805f9b34fb',
+          href: `gatt://${IP}/00001204-0000-1000-8000-00805f9b34fb/00001a01-0000-1000-8000-00805f9b34fb`,
           op: 'readproperty',
           'sbo:methodName': 'sbo:read',
           contentType: 'application/x.binary-data-stream',
@@ -96,7 +98,7 @@ const td = {
 
       forms: [
         {
-          href: 'gatt://C4-7C-8D-6D-7D-F8/00001204-0000-1000-8000-00805f9b34fb/00001a00-0000-1000-8000-00805f9b34fb',
+          href: `gatt://${IP}/00001204-0000-1000-8000-00805f9b34fb/00001a00-0000-1000-8000-00805f9b34fb`,
           op: 'invokeaction',
           'sbo:methodName': 'sbo:write',
           contentType: 'application/x.binary-data-stream',

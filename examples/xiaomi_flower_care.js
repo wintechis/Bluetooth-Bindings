@@ -6,7 +6,7 @@ const Bluetooth_lib = require('../dist/src/bluetooth/Bluetooth_lib');
 const servient = new Servient();
 servient.addClientFactory(new Bluetooth_client_factory.default());
 
-const IP = "5C-85-7E-B0-25-EB"
+const MAC = "5C-85-7E-B0-25-EB"
 
 const td = {
   '@context': [
@@ -49,7 +49,7 @@ const td = {
       'bdo:pattern': '{temp}00{brightness}{moisture}{conduct}023c00fb349b',
       'bdo:variables': {
         temp: {
-          type: 'integer',
+          type: 'number',
           'bdo:bytelength': 2,
           'bdo:scale': 0.1,
           description: 'The current temperature value.',
@@ -72,7 +72,7 @@ const td = {
       },
       forms: [
         {
-          href: `gatt://${IP}/00001204-0000-1000-8000-00805f9b34fb/00001a01-0000-1000-8000-00805f9b34fb`,
+          href: `gatt://${MAC}/00001204-0000-1000-8000-00805f9b34fb/00001a01-0000-1000-8000-00805f9b34fb`,
           op: 'readproperty',
           'sbo:methodName': 'sbo:read',
           contentType: 'application/x.binary-data-stream',
@@ -98,7 +98,7 @@ const td = {
 
       forms: [
         {
-          href: `gatt://${IP}/00001204-0000-1000-8000-00805f9b34fb/00001a00-0000-1000-8000-00805f9b34fb`,
+          href: `gatt://${MAC}/00001204-0000-1000-8000-00805f9b34fb/00001a00-0000-1000-8000-00805f9b34fb`,
           op: 'invokeaction',
           'sbo:methodName': 'sbo:write',
           contentType: 'application/x.binary-data-stream',

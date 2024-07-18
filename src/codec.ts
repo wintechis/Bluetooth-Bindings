@@ -16,7 +16,7 @@ export class BLEBinaryCodec implements ContentCodec {
     let parsed;
     let name_list;
     let value_list;
-
+    let global_type = schema.type; // Save global type
     if (typeof schema['bdo:pattern'] != 'undefined') {
       // Pattern
       const result_arr = readPattern(schema, bytes);
@@ -25,7 +25,13 @@ export class BLEBinaryCodec implements ContentCodec {
       let decoded_result_arr = [];
       for (let i = 0; i < name_list.length; i++) {
         // Get parameter
-        const schema_temp = schema['bdo:variables'][name_list[i]];
+        let schema_temp = schema['bdo:variables'][name_list[i]];
+
+        if (schema_temp.type == undefined){
+          // If no type is annotated use the one annotated at the top
+          schema_temp.type = global_type;
+        }
+
         const bytes_temp = value_list[i];
 
         if (schema_temp.type == 'integer') {
@@ -40,6 +46,7 @@ export class BLEBinaryCodec implements ContentCodec {
         } else {
           throw new Error('Datatype not supported by codec');
         }
+
         parsed = decoded_result_arr;
       }
     } else {
@@ -55,6 +62,12 @@ export class BLEBinaryCodec implements ContentCodec {
       } else {
         throw new Error('Datatype not supported by codec');
       }
+    }
+
+    const length = getArrayLength(parsed)
+    
+    if (length === 1 && Array.isArray(parsed)) {
+      parsed = parsed[0];
     }
 
     return parsed;
@@ -89,6 +102,13 @@ export class BLEBinaryCodec implements ContentCodec {
     }
     return buf;
   }
+}
+
+function getArrayLength(value: string | number | (string | number)[]): number | undefined {
+  if (Array.isArray(value)) {
+    return value.length;
+  }
+  return undefined;
 }
 
 /**

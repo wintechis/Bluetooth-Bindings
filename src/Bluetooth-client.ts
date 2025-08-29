@@ -65,6 +65,7 @@ export default class BluetoothClient implements ProtocolClient {
     content: Content
   ): Promise<void> {
     const deconstructedForm = deconstructForm(form);
+    await BLELibCore.connect(deconstructedForm.deviceId);
     let buffer: Buffer;
 
     //Convert readableStreamToBuffer
@@ -116,6 +117,8 @@ export default class BluetoothClient implements ProtocolClient {
         );
       }
     }
+
+    await BLELibCore.close();
   }
 
   /**

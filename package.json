@@ -3,9 +3,11 @@
     "build": "tsc -p ."
   },
   "dependencies": {
-    "@node-wot/core": "^0.8.1",
-    "@types/node": "^18.0.6",
-    "node-ble": "^1.11.0",
-    "typescript": "^4.7.4"
+    "@node-wot/core": "0.8.1",
+    "node-ble": "^1.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "18.19.64",
+    "typescript": "4.9.5"
   }
 }

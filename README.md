@@ -4,6 +4,24 @@
 
 W3C Web of Things (WoT) compatible Protocol Bindings for [Bluetooth LE](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy) to use with  [node-wot](https://github.com/eclipse/thingweb.node-wot). 
 
+This package provides a Bluetooth LE client factory that plugs into a WoT `Servient` enabling consumption of Things over GATT.
+
+## Installation
+```
+npm install wot-ble-client-factory @node-wot/core
+```
+
+## Minimal Setup
+```
+const { Servient } = require("@node-wot/core");
+const { BluetoothClientFactory } = require("wot-ble-client-factory");
+
+const servient = new Servient();
+servient.addClientFactory(new BluetoothClientFactory());
+```
+
+Check the `examples` folder for more complete Thing Descriptions.
+
 ## Protocol specifier
 
 The protocol prefix handled by this binding is <code>gatt://</code>.
@@ -11,14 +29,19 @@ The protocol prefix handled by this binding is <code>gatt://</code>.
 A planned protocol prefix is <code>gap://</code>.
 
 ## Getting Started
+If you want to build this package locally:
+```
+git clone git@github.com:wintechis/Bluetooth-Bindings.git
+cd Bluetooth-Bindings
+npm install
+npm run build
 
-### Setup
+```
+Then you can run the examples:
 
-- Download the project
-- Install all packages with <code>npm install</code>
-- Build the project with <code>npm run build</code>
-- Implement your own application or try one of the examples in <code>./examples/</code>
-
+```
+node examples/govee_lamp.js
+```
 ## Documentation
 
 ### Default Mappings
@@ -72,3 +95,17 @@ The communication and metadata of a Bluetooth Low Energy device is described usi
 This information is optional and not required.
  
 ![Alt text](img/SBO3.png?raw=true "sbo Ontology")
+
+
+## Citation
+
+If you use this project in your research or applications, please cite it as:
+
+```
+@article{freund2022wotble,
+  title   = {Applying the Web of Things abstraction to Bluetooth Low Energy communication},
+  author  = {Freund, Michael and Dorsch, Rene and Harth, Andreas},
+  journal = {arXiv preprint arXiv:2211.12934},
+  year    = {2022}
+}
+```

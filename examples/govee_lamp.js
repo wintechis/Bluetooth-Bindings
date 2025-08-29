@@ -1,12 +1,12 @@
 const {Servient} = require('@node-wot/core');
-const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
+const { BluetoothClientFactory } = require('wot-ble-client-factory');
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 const servient = new Servient();
-servient.addClientFactory(new Bluetooth_client_factory.default());
+servient.addClientFactory(new BluetoothClientFactory);
 
 const td = {
   '@context': [

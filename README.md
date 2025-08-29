@@ -12,7 +12,7 @@ npm install wot-ble-client-factory @node-wot/core
 ```
 
 ## Minimal Setup
-```
+```js
 const { Servient } = require("@node-wot/core");
 const { BluetoothClientFactory } = require("wot-ble-client-factory");
 
@@ -101,7 +101,7 @@ This information is optional and not required.
 
 If you use this project in your research or applications, please cite it as:
 
-```
+```bibtex
 @article{freund2022wotble,
   title   = {Applying the Web of Things abstraction to Bluetooth Low Energy communication},
   author  = {Freund, Michael and Dorsch, Rene and Harth, Andreas},

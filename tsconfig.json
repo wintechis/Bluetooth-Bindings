@@ -2,11 +2,11 @@
     "compilerOptions": {
         "target": "es6",
         "lib": ["dom"],
-        "skipLibCheck": false,
+        "skipLibCheck": true,
         "module": "commonjs",
         "outDir": "dist",
         "alwaysStrict": true,
-        "strict": false,
+        "strict": true,
         "composite": true,
         "incremental": true,
         "sourceMap": true,
@@ -19,12 +19,12 @@
         "declaration": true,
         "esModuleInterop": true,
         "strictFunctionTypes": false,
-        "moduleResolution": "node" /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
+        "moduleResolution": "node", 
         "resolveJsonModule": false,
         "noStrictGenericChecks": false,
         "noImplicitThis": true,
         "skipDefaultLibCheck": false,
-        "allowJs": false
+        "allowJs": false,
     },
     "include": [
         "src/*.ts",

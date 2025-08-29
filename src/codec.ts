@@ -79,7 +79,7 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): Buffer {
-    let buf: Buffer;
+    let buf: any;
     let hexString: string;
 
     // Check if pattern is provieded and fill in
@@ -128,7 +128,7 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
     throw new Error('Not all parameters are provided!');
   }
 
-  let parsed: number;
+  let parsed: any;
 
   if (byteOrder == 'little') {
     if (signed) {

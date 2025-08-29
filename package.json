@@ -3,8 +3,8 @@
     "build": "tsc -p ."
   },
   "dependencies": {
-    "@node-wot/core": "0.8.1",
-    "node-ble": "^1.13.0"
+    "@node-wot/core": "0.9.1",
+    "node-ble": "1.13.0"
   },
   "devDependencies": {
     "@types/node": "18.19.64",

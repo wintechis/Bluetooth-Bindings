@@ -1,9 +1,77 @@
 import {Content, ProtocolClient, ProtocolHelpers} from '@node-wot/core';
-import {Form, SecurityScheme} from '@node-wot/td-tools';
-import {BluetoothForm} from './Bluetooth.js';
-import {Subscription} from 'rxjs';
+import {Subscription} from 'rxjs/Subscription';
+import type {Form, SecurityScheme} from 'wot-thing-description-types';
 import {Readable} from 'stream';
 import * as BLELibCore from './bluetooth/Bluetooth_lib';
+
+////// helpers ////////////////////////////////////////////////////////////
+type BluetoothFormExt = Form & {
+  'wbt:id'?: string;
+  datatype?: string;
+  'sbo:methodName'?: string;
+};
+
+function asBle(form: Form): BluetoothFormExt {
+  return form as BluetoothFormExt;
+}
+
+function fromBuffer(type: string, buf: Buffer): Content {
+  return {
+    type,
+    body: Readable.from(buf),
+    async toBuffer() {
+      return buf;
+    },
+  };
+}
+
+function fromReadable(type: string, body: Readable): Content {
+  return {
+    type,
+    body,
+    async toBuffer() {
+      const chunks: Buffer[] = [];
+      for await (const chunk of body) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    },
+  };
+}
+
+// Deconstructs TD form into BLE bits we need
+export const deconstructForm = function (form: Form) {
+  const f = asBle(form);
+  const deconstructedForm: Record<string, any> = {};
+
+  // Remove gatt://
+  deconstructedForm.path = f.href.split('//')[1];
+
+  // DeviceId is mac of device. Add ':'
+  // e.g. c0-3c-59-a8-91-06  -> c0:3c:59:a8:91:06
+  deconstructedForm.deviceId = deconstructedForm.path.split('/')[0];
+  deconstructedForm.deviceId = deconstructedForm.deviceId.toUpperCase();
+  deconstructedForm.deviceId = deconstructedForm.deviceId.replaceAll('-', ':');
+
+  // Extract serviceId
+  deconstructedForm.serviceId = deconstructedForm.path.split('/')[1];
+
+  // Extract characteristicId
+  deconstructedForm.characteristicId = deconstructedForm.path.split('/')[2];
+
+  // Extract operation (e.g., readproperty; writeproperty)
+  deconstructedForm.operation = f.op;
+
+  // BLE operation type (e.g., sbo:write, sbo:notify)
+  deconstructedForm.ble_operation = f['sbo:methodName'];
+
+  // Content type if present on form
+  deconstructedForm.contentType = f.contentType;
+
+  return deconstructedForm;
+};
+
+///// client ////////////////////////////////////////////////////////////
 
 export default class BluetoothClient implements ProtocolClient {
   public toString(): string {
@@ -11,14 +79,11 @@ export default class BluetoothClient implements ProtocolClient {
   }
 
   /**
-   * Reads the value of a ressource
-   * @param {BluetoothForm} form form of property to read.
-   * @returns {Promise} Promise that resolves to the read value.
+   * Reads the value of a resource
    */
-  public async readResource(form: BluetoothForm): Promise<Content> {
+  public async readResource(form: Form): Promise<Content> {
     const deconstructedForm = deconstructForm(form);
 
-    let buffer: Buffer;
     console.debug(
       '[binding-Bluetooth]',
       `invoke read operation on characteristic ${deconstructedForm.characteristicId}` +
@@ -33,6 +98,7 @@ export default class BluetoothClient implements ProtocolClient {
     );
 
     // Read Value
+    let buffer: Buffer;
     try {
       buffer = await characteristic.readValue();
     } catch (error) {
@@ -42,41 +108,35 @@ export default class BluetoothClient implements ProtocolClient {
       );
     }
 
-    // Convert to readable
-    let s = new Readable();
-    s.push(buffer);
-    s.push(null);
-    const body = ProtocolHelpers.toNodeStream(s as Readable);
-
-    return {
-      type: form.contentType || 'application/x.binary-data-stream',
-      body: body,
-    };
+    // Return proper Content (with toBuffer)
+    return fromBuffer(
+      deconstructedForm.contentType || 'application/x.binary-data-stream',
+      buffer
+    );
   }
 
   /**
-   * Writes a value to a ressource
-   * @param {BluetoothForm} form form of property to write.
-   * @param {Content} content content to write to device
-   * @returns {Promise} Promise that resolves to the read value.
+   * Writes a value to a resource
    */
-  public async writeResource(
-    form: BluetoothForm,
-    content: Content
-  ): Promise<void> {
+  public async writeResource(form: Form, content?: Content): Promise<void> {
     const deconstructedForm = deconstructForm(form);
     await BLELibCore.connect(deconstructedForm.deviceId);
-    let buffer: Buffer;
 
-    //Convert readableStreamToBuffer
-    if (typeof content != 'undefined') {
-      const chunks = [];
-      for await (const chunk of content.body) {
-        chunks.push(chunk as Buffer);
+    // Convert content -> Buffer
+    let buffer: Buffer;
+    if (content) {
+      // prefer the canonical method available on node-wot Content
+      if (typeof content.toBuffer === 'function') {
+        buffer = await content.toBuffer();
+      } else {
+        const chunks: Buffer[] = [];
+        for await (const chunk of content.body) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        buffer = Buffer.concat(chunks);
       }
-      buffer = Buffer.concat(chunks);
     } else {
-      // If content not definied write buffer < 00 >
+      // If content not defined write buffer < 00 >
       buffer = Buffer.alloc(1);
     }
 
@@ -93,9 +153,8 @@ export default class BluetoothClient implements ProtocolClient {
         console.debug(
           '[binding-Bluetooth]',
           `invoke write operation on characteristic ${deconstructedForm.characteristicId}` +
-            `from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
+            ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
-
         // write value with response
         await characteristic.writeValue(buffer, {offset: 0, type: 'request'});
         break;
@@ -104,9 +163,8 @@ export default class BluetoothClient implements ProtocolClient {
         console.debug(
           '[binding-Bluetooth]',
           `invoke write-without-response operation on characteristic ${deconstructedForm.characteristicId}` +
-            `from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
+            ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
-
         // write value without response
         await characteristic.writeValue(buffer, {offset: 0, type: 'command'});
         break;
@@ -122,34 +180,24 @@ export default class BluetoothClient implements ProtocolClient {
   }
 
   /**
-   * Invokes an action
-   * @param {BluetoothForm} form form of action to invoke.
-   * @param {Content} content content to write to device
-   * @returns {Promise} Promise that resolves to the read value.
+   * Invokes an action (write + trivial response)
    */
-  public async invokeResource(
-    form: BluetoothForm,
-    content: Content
-  ): Promise<Content> {
-    // Call writeRessource
+  public async invokeResource(form: Form, content?: Content): Promise<Content> {
     await this.writeResource(form, content);
-    let s = new Readable();
-    s.push('');
+    const s = new Readable();
+    s.push(''); // empty text response
     s.push(null);
     const body = ProtocolHelpers.toNodeStream(s as Readable);
-    return {
-      type: 'text/plain',
-      body: body,
-    };
+    return fromReadable('text/plain', body);
   }
 
-  public async unlinkResource(form: BluetoothForm): Promise<void> {
+  public async unlinkResource(form: Form): Promise<void> {
     const deconstructedForm = deconstructForm(form);
 
     console.debug(
       '[binding-Bluetooth]',
-      `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId 
-      ${deconstructedForm.characteristicId} on ${deconstructedForm.deviceId}`
+      `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ` +
+        `${deconstructedForm.characteristicId} on ${deconstructedForm.deviceId}`
     );
 
     const characteristic = await BLELibCore.getCharacteristic(
@@ -162,10 +210,10 @@ export default class BluetoothClient implements ProtocolClient {
   }
 
   /**
-   * Subscribe to an "notify" event
+   * Subscribe to a "notify" event
    */
   public async subscribeResource(
-    form: BluetoothForm,
+    form: Form,
     next: (content: Content) => void,
     error?: (error: Error) => void,
     complete?: () => void
@@ -179,7 +227,8 @@ export default class BluetoothClient implements ProtocolClient {
     }
     console.debug(
       '[binding-Bluetooth]',
-      `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
+      `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} ` +
+        `characteristicId ${deconstructedForm.characteristicId}`
     );
 
     const characteristic = await BLELibCore.getCharacteristic(
@@ -190,71 +239,59 @@ export default class BluetoothClient implements ProtocolClient {
 
     await characteristic.startNotifications();
 
-    characteristic.on('valuechanged', (buffer: Buffer) => {
-      console.debug(
-        '[binding-Bluetooth]',
-        `event occured on characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ${deconstructedForm.characteristicId}`
-      );
-      const array = new Uint8Array(buffer);
-      // Convert value a DataView to ReadableStream
-      let s = new Readable();
-      s.push(array);
-      s.push(null);
-      const body = ProtocolHelpers.toNodeStream(s as Readable);
-      const content = {
-        type: form.contentType || 'application/x.binary-data-stream',
-        body: body,
-      };
-      next(content);
+    const handler = (buffer: Buffer) => {
+      try {
+        const s = new Readable();
+        s.push(buffer);
+        s.push(null);
+        const body = ProtocolHelpers.toNodeStream(s as Readable);
+        next(
+          fromReadable(
+            deconstructedForm.contentType || 'application/x.binary-data-stream',
+            body
+          )
+        );
+      } catch (e: any) {
+        error?.(e);
+      }
+    };
+
+    characteristic.on('valuechanged', handler);
+
+    // Return a simple core-compatible subscription
+    const sub = new Subscription();
+    sub.add(() => {
+      // detach listener
+      characteristic.off?.('valuechanged', handler);
+      void characteristic
+        .stopNotifications()
+        .then(() => {
+          complete?.();
+        })
+        .catch((e: any) => {
+          error?.(e);
+        });
     });
 
-    return new Subscription(() => {});
+    return sub;
   }
 
   public async start(): Promise<void> {
-    // do nothing
+    // no-op
   }
 
   public async stop(): Promise<void> {
-    // do nothing
+    // no-op
+  }
+
+  async requestThingDescription(uri: string): Promise<Content> {
+    throw new Error('requestThingDescription not supported by BluetoothClient');
   }
 
   public setSecurity(
-    metadata: SecurityScheme[],
-    credentials?: unknown
+    _metadata: SecurityScheme[],
+    _credentials?: unknown
   ): boolean {
     return false;
   }
 }
-
-/**
- * Deconsructs form in object
- * @param {Form} form form to analyze
- * @returns {Object} Object containing all parameters
- */
-export const deconstructForm = function (form: BluetoothForm) {
-  const deconstructedForm: Record<string, any> = {};
-
-  // Remove gatt://
-  deconstructedForm.path = form.href.split('//')[1];
-
-  // DeviceId is mac of device. Add ':'
-  // e.g. c0-3c-59-a8-91-06  -> c0:3c:59:a8:91:06
-  deconstructedForm.deviceId = deconstructedForm.path.split('/')[0];
-  deconstructedForm.deviceId = deconstructedForm.deviceId.toUpperCase();
-  deconstructedForm.deviceId = deconstructedForm.deviceId.replaceAll('-', ':');
-
-  // Extract serviceId
-  deconstructedForm.serviceId = deconstructedForm.path.split('/')[1];
-
-  // Extract characteristicId
-  deconstructedForm.characteristicId = deconstructedForm.path.split('/')[2];
-
-  // Extract operation -> e.g. readproperty; writeproperty
-  deconstructedForm.operation = form.op;
-
-  // Get BLE operation type
-  deconstructedForm.ble_operation = form['sbo:methodName'];
-
-  return deconstructedForm;
-};

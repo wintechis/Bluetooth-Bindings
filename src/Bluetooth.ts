@@ -1,4 +1,4 @@
-import {Form} from '@node-wot/td-tools';
+import { Form } from "@node-wot/core";
 
 export {default as BluetoothClient} from './Bluetooth-client.js';
 export {default as BluetoothClientFactory} from './Bluetooth-client-factory.js';

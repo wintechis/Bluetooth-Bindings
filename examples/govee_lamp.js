@@ -1,5 +1,4 @@
-// client for Huskylense connected to a Arduino running a GATT server
-const {Servient, Helpers} = require('@node-wot/core');
+const {Servient} = require('@node-wot/core');
 const Bluetooth_client_factory = require('../dist/src/Bluetooth-client-factory');
 
 function sleep(ms) {

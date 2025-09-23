@@ -77,13 +77,15 @@ export default class BluetoothClient implements ProtocolClient {
   public toString(): string {
     return '[BluetoothClient]';
   }
-
+  
   /**
    * Reads the value of a resource
    */
   public async readResource(form: Form): Promise<Content> {
     const deconstructedForm = deconstructForm(form);
 
+    await BLELibCore.connect(deconstructedForm.deviceId);
+    
     console.debug(
       '[binding-Bluetooth]',
       `invoke read operation on characteristic ${deconstructedForm.characteristicId}` +
@@ -108,6 +110,8 @@ export default class BluetoothClient implements ProtocolClient {
       );
     }
 
+    await BLELibCore.close();
+    
     // Return proper Content (with toBuffer)
     return fromBuffer(
       deconstructedForm.contentType || 'application/x.binary-data-stream',
@@ -295,3 +299,4 @@ export default class BluetoothClient implements ProtocolClient {
     return false;
   }
 }
+

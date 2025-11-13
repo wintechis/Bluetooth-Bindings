@@ -27,7 +27,7 @@ export class BLEBinaryCodec implements ContentCodec {
         // Get parameter
         let schema_temp = schema['bdo:variables'][name_list[i]];
 
-        if (schema_temp.type == undefined){
+        if (schema_temp.type == undefined) {
           // If no type is annotated use the one annotated at the top
           schema_temp.type = global_type;
         }
@@ -64,8 +64,8 @@ export class BLEBinaryCodec implements ContentCodec {
       }
     }
 
-    const length = getArrayLength(parsed)
-    
+    const length = getArrayLength(parsed);
+
     if (length === 1 && Array.isArray(parsed)) {
       parsed = parsed[0];
     }
@@ -81,12 +81,36 @@ export class BLEBinaryCodec implements ContentCodec {
   ): Buffer {
     let buf: any;
     let hexString: string;
+    //console.log(schema);
+    //console.log(dataValue);
 
     // Check if pattern is provieded and fill in
     if (typeof schema['bdo:pattern'] != 'undefined') {
-      // String Pattern
-      hexString = fillStringPattern(schema, dataValue);
-      buf = string2byte(schema, hexString);
+      if (schema.type == 'integer') {
+        const hexBuffer = int2byte(schema, dataValue);
+
+        // Split buffer at "{"
+        const splitPattern = schema['bdo:pattern'].split('{');
+        if (splitPattern.length != 2) {
+          throw new Error('To many placeholders for input type!');
+        }
+
+        const before = schema['bdo:pattern'].split('{')[0];
+        const after = schema['bdo:pattern'].split('}')[1];
+
+        const buf = Buffer.concat([
+          hexToBuffer(before),
+          hexBuffer,
+          hexToBuffer(after),
+        ]);
+
+        return buf;
+      }
+      if (schema.type == 'object') {
+        // If string Pattern is provided
+        hexString = fillStringPattern(schema, dataValue);
+        return hexToBuffer(hexString);
+      }
     }
     // Else create buffer without pattern
     else {
@@ -104,7 +128,9 @@ export class BLEBinaryCodec implements ContentCodec {
   }
 }
 
-function getArrayLength(value: string | number | (string | number)[]): number | undefined {
+function getArrayLength(
+  value: string | number | (string | number)[]
+): number | undefined {
   if (Array.isArray(value)) {
     return value.length;
   }
@@ -251,7 +277,7 @@ function fillStringPattern(schema: DataSchema, dataValue: any) {
   let key: string;
   let params: any;
   // Iterate over provided parameters and convert to hex string
-  for ([key, params] of Object.entries(schema['bdo:variables'])) {
+  for ([key, params] of Object.entries(schema.properties)) {
     // Convert integer values to hex string
     if (params.type == 'integer') {
       let buf = int2byte(params, dataValue[key]);
@@ -288,4 +314,8 @@ function byte2string(schema: DataSchema, bytes: Buffer) {
     value = bytes.toString('hex');
   }
   return value;
+}
+
+function hexToBuffer(hex: string) {
+  return Buffer.from(hex, 'hex');
 }

@@ -1,6 +1,6 @@
 {
   "name": "wot-ble-client-factory",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Bluetooth LE client factory for node-wot Servient",
   "author": "Michael Freund",
   "license": "AGPL-3.0",
@@ -28,7 +28,8 @@
     "@node-wot/core": "^0.9.1"
   },
   "dependencies": {
-    "node-ble": "^1.13.0"
+    "node-ble": "^1.13.0",
+    "wot-ble-client-factory": "^0.1.1"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

@@ -2,7 +2,22 @@ import {Content, ProtocolClient, ProtocolHelpers} from '@node-wot/core';
 import {Subscription} from 'rxjs/Subscription';
 import type {Form, SecurityScheme} from 'wot-thing-description-types';
 import {Readable} from 'stream';
+import debug from 'debug';
 import * as BLELibCore from './bluetooth/Bluetooth_lib';
+
+// If conenction should be closed automatically
+let autoDisconnect = true;
+
+export function enableAutoDisconnect() {
+  autoDisconnect = true;
+}
+
+export function disableAutoDisconnect() {
+  autoDisconnect = false;
+}
+
+// Create a logger with a specific namespace
+const log = debug('binding-Bluetooth');
 
 ////// helpers ////////////////////////////////////////////////////////////
 type BluetoothFormExt = Form & {
@@ -77,7 +92,7 @@ export default class BluetoothClient implements ProtocolClient {
   public toString(): string {
     return '[BluetoothClient]';
   }
-  
+
   /**
    * Reads the value of a resource
    */
@@ -85,9 +100,8 @@ export default class BluetoothClient implements ProtocolClient {
     const deconstructedForm = deconstructForm(form);
 
     await BLELibCore.connect(deconstructedForm.deviceId);
-    
-    console.debug(
-      '[binding-Bluetooth]',
+
+    log(
       `invoke read operation on characteristic ${deconstructedForm.characteristicId}` +
         ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
     );
@@ -110,8 +124,10 @@ export default class BluetoothClient implements ProtocolClient {
       );
     }
 
-    await BLELibCore.close();
-    
+    if (autoDisconnect) {
+      await BLELibCore.close();
+    }
+
     // Return proper Content (with toBuffer)
     return fromBuffer(
       deconstructedForm.contentType || 'application/x.binary-data-stream',
@@ -129,18 +145,35 @@ export default class BluetoothClient implements ProtocolClient {
     // Convert content -> Buffer
     let buffer: Buffer;
     if (content) {
-      // prefer the canonical method available on node-wot Content
-      if (typeof content.toBuffer === 'function') {
-        buffer = await content.toBuffer();
+      // 1) If node-wot gives you a canonical helper, use it
+      if (typeof (content as any).toBuffer === 'function') {
+        buffer = await (content as any).toBuffer();
       } else {
+        // 2) Manually read the body and preserve Buffers as-is
         const chunks: Buffer[] = [];
-        for await (const chunk of content.body) {
-          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+
+        for await (const chunk of (content as any).body) {
+          if (Buffer.isBuffer(chunk)) {
+            chunks.push(chunk); // already a Buffer → keep as-is
+          } else if (typeof chunk === 'string') {
+            chunks.push(Buffer.from(chunk, 'utf8'));
+          } else {
+            // covers Uint8Array, Array<number>, etc.
+            chunks.push(Buffer.from(chunk as any));
+          }
         }
-        buffer = Buffer.concat(chunks);
+
+        // If there was exactly one Buffer, just use it directly
+        if (chunks.length === 0) {
+          buffer = Buffer.alloc(0);
+        } else if (chunks.length === 1) {
+          buffer = chunks[0];
+        } else {
+          buffer = Buffer.concat(chunks);
+        }
       }
     } else {
-      // If content not defined write buffer < 00 >
+      // If content not defined write buffer <00>
       buffer = Buffer.alloc(1);
     }
 
@@ -154,8 +187,7 @@ export default class BluetoothClient implements ProtocolClient {
     // Select what operation should be executed
     switch (deconstructedForm.ble_operation) {
       case 'sbo:write':
-        console.debug(
-          '[binding-Bluetooth]',
+        log(
           `invoke write operation on characteristic ${deconstructedForm.characteristicId}` +
             ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
@@ -164,8 +196,7 @@ export default class BluetoothClient implements ProtocolClient {
         break;
 
       case 'sbo:write-without-response':
-        console.debug(
-          '[binding-Bluetooth]',
+        log(
           `invoke write-without-response operation on characteristic ${deconstructedForm.characteristicId}` +
             ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
@@ -180,7 +211,9 @@ export default class BluetoothClient implements ProtocolClient {
       }
     }
 
-    await BLELibCore.close();
+    if (autoDisconnect) {
+      await BLELibCore.close();
+    }
   }
 
   /**
@@ -198,8 +231,7 @@ export default class BluetoothClient implements ProtocolClient {
   public async unlinkResource(form: Form): Promise<void> {
     const deconstructedForm = deconstructForm(form);
 
-    console.debug(
-      '[binding-Bluetooth]',
+    log(
       `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ` +
         `${deconstructedForm.characteristicId} on ${deconstructedForm.deviceId}`
     );
@@ -229,8 +261,7 @@ export default class BluetoothClient implements ProtocolClient {
         `[binding-Bluetooth] operation ${deconstructedForm.ble_operation} is not supported`
       );
     }
-    console.debug(
-      '[binding-Bluetooth]',
+    log(
       `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} ` +
         `characteristicId ${deconstructedForm.characteristicId}`
     );
@@ -299,4 +330,3 @@ export default class BluetoothClient implements ProtocolClient {
     return false;
   }
 }
-

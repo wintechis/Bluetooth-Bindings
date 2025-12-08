@@ -1,6 +1,10 @@
 import {ContentCodec} from '@node-wot/core';
 import {DataSchema, DataSchemaValue} from 'wot-typescript-definitions';
 const UriTemplate = require('uritemplate');
+import debug from 'debug';
+
+// Create a logger with a specific namespace
+const log = debug('binding-Bluetooth');
 
 export class BLEBinaryCodec implements ContentCodec {
   getMediaType(): string {
@@ -79,6 +83,8 @@ export class BLEBinaryCodec implements ContentCodec {
     schema: DataSchema,
     parameters?: {[key: string]: string}
   ): Buffer {
+    log('Writing Value:', dataValue);
+
     let buf: any;
     let hexString: string;
     //console.log(schema);
@@ -120,7 +126,11 @@ export class BLEBinaryCodec implements ContentCodec {
           buf = int2byte(schema, dataValue);
           break;
         case 'string':
-          buf = string2byte(schema, dataValue);
+          if (schema.format == 'hex') {
+            buf = Buffer.from(dataValue, 'hex');
+          } else {
+            buf = string2byte(schema, dataValue);
+          }
           break;
       }
     }

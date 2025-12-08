@@ -4,6 +4,10 @@
 
 import {createBluetooth} from 'node-ble';
 import {deconstructForm} from '../Bluetooth-client';
+import debug from 'debug';
+
+// Create a logger with a specific namespace
+const log = debug('binding-Bluetooth');
 
 type BLEPair = ReturnType<typeof createBluetooth>;
 
@@ -18,7 +22,7 @@ export const reinit = () => {
   _bluetooth = ble.bluetooth;
   _destroy = ble.destroy;
   _destroyed = false;
-  console.debug('[binding-Bluetooth]', 'BLE reinitialized');
+  log('BLE reinitialized');
 };
 
 // internal helper to ensure connection is alive
@@ -46,9 +50,9 @@ export const startScan = async function () {
   const adapter = await getAdapter();
   if (!(await adapter.isDiscovering())) {
     await adapter.startDiscovery();
-    console.debug('[binding-Bluetooth]', 'Scanning started');
+    log('Scanning started');
   } else {
-    console.debug('[binding-Bluetooth]', 'Scanning already in progress');
+    log('Scanning already in progress');
   }
 };
 
@@ -59,9 +63,9 @@ export const stopScan = async function () {
   const adapter = await getAdapter();
   if (await adapter.isDiscovering()) {
     await adapter.stopDiscovery();
-    console.debug('[binding-Bluetooth]', 'Scanning stopped');
+    log('Scanning stopped');
   } else {
-    console.debug('[binding-Bluetooth]', 'Scanning already stopped');
+    log('Scanning already stopped');
   }
 };
 
@@ -82,12 +86,20 @@ export const getAdapterStatus = async function () {
 export const getDeviceById = async function (id: string, timeoutMs = 15000) {
   const adapter = await getAdapter();
   // race waitDevice against timeout
-  return await Promise.race([
+  return (await Promise.race([
     adapter.waitDevice(id),
     new Promise((_, rej) =>
-      setTimeout(() => rej(new Error(`Bluetooth device ${id} wasn't found within ${timeoutMs}ms`)), timeoutMs)
+      setTimeout(
+        () =>
+          rej(
+            new Error(
+              `Bluetooth device ${id} wasn't found within ${timeoutMs}ms`
+            )
+          ),
+        timeoutMs
+      )
     ),
-  ]) as any; // node-ble device
+  ])) as any; // node-ble device
 };
 
 /**
@@ -105,7 +117,7 @@ export const connect = async function (id: string) {
       if (!discovering) await startScan();
 
       const device: any = await getDeviceById(id);
-      console.debug('[binding-Bluetooth]', `Connecting to Device ${id}`);
+      log(`Connecting to Device ${id}`);
       await device.connect();
       const gattServer = await device.gatt();
 
@@ -138,7 +150,9 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
     return service;
   } catch (error) {
     console.error(error);
-    throw new Error(`No Services Matching UUID ${serviceUUID} found in Device ${id}.`);
+    throw new Error(
+      `No Services Matching UUID ${serviceUUID} found in Device ${id}.`
+    );
   }
 };
 
@@ -159,9 +173,10 @@ export const getCharacteristic = async function (
   const service: any = await getPrimaryService(id, serviceUUID);
   if (!service) return;
   try {
-    const characteristic = await service.getCharacteristic(characteristicUUID.toLowerCase());
-    console.debug(
-      '[binding-Bluetooth]',
+    const characteristic = await service.getCharacteristic(
+      characteristicUUID.toLowerCase()
+    );
+    log(
       `Got characteristic ${characteristicUUID} from service ${serviceUUID} of Device ${id}`
     );
     return characteristic;
@@ -198,7 +213,7 @@ export const disconnectByMac = async function (id: string) {
   if (entry) {
     const device = entry[0];
     await device.disconnect();
-    console.debug('[binding-Bluetooth]', 'Disconnecting from Device:', id);
+    log('Disconnecting from Device:', id);
     delete connection_established_obj[id];
   }
 };
@@ -208,7 +223,7 @@ export const disconnectByMac = async function (id: string) {
  */
 export const disconnectAll = async function () {
   for (const [key, value] of Object.entries(connection_established_obj)) {
-    console.debug('[binding-Bluetooth]', 'Disconnecting from Device:', key);
+    log('Disconnecting from Device:', key);
     await value[0].disconnect();
   }
   for (const key in connection_established_obj) {
@@ -227,7 +242,7 @@ export const close = async function () {
       await stopScan();
     }
   } catch (e) {
-    console.debug('[binding-Bluetooth]', 'stopScan failed (ignoring):', e);
+    log('stopScan failed (ignoring):', e);
   }
 
   await disconnectAll();
@@ -238,7 +253,7 @@ export const close = async function () {
   } catch (e) {
   } finally {
     _destroyed = true;
-    console.debug('[binding-Bluetooth]', 'BLE destroyed');
+    log('BLE destroyed');
   }
 };
 

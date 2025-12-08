@@ -22,6 +22,11 @@ servient.addClientFactory(new BluetoothClientFactory());
 
 Check the `examples` folder for more complete Thing Descriptions.
 
+To enable debug logs run with this command:
+```bash
+DEBUG=binding-Bluetooth node example.js
+```
+
 ## Protocol specifier
 
 The protocol prefix handled by this binding is <code>gatt://</code>.

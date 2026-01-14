@@ -159,6 +159,8 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
   const scale = schema['bdo:scale'] || 1;
   const offset = schema['bdo:offset'] || 0;
 
+  const valueAdd = schema['bdo:valueAdd'] || 0;
+
   if (typeof bytelength == 'undefined') {
     throw new Error('Not all parameters are provided!');
   }
@@ -180,6 +182,9 @@ function byte2int(schema: DataSchema, bytes: Buffer) {
   }
 
   parsed = parsed * scale;
+
+  // Apply Addition
+  parsed = parsed + valueAdd;
 
   return parsed;
 }

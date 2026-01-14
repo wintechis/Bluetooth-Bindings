@@ -3,7 +3,7 @@
  */
 
 import { createBluetooth } from "node-ble";
-import { deconstructForm } from "../Bluetooth-client";
+import { deconstructForm } from "../Bluetooth-gatt-client";
 import debug from "debug";
 
 const log = debug("binding-Bluetooth");
@@ -44,7 +44,7 @@ const ensureAlive = () => initBleIfNeeded();
 // -------------------------
 // Keep connection open briefly; disconnect on idle; close DBus after everything idle.
 // Tweak defaults as needed.
-let DEVICE_IDLE_DISCONNECT_MS = 3000;
+let DEVICE_IDLE_DISCONNECT_MS = 2500;
 let DBUS_IDLE_CLOSE_MS = 350;  
 
 export const setDeviceIdleDisconnectMs = (ms: number) => {
@@ -253,6 +253,72 @@ export const getCharacteristic = async function (
   } catch (error) {
     console.error(error);
     throw new Error("The device has not the specified characteristic.");
+  }
+};
+
+// -------------------------
+// GAP / Advertisement Helpers
+// -------------------------
+
+function bufToHex(buf: Buffer) {
+  return [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function parseManufacturerData(mfg: Record<string, Buffer>) {
+  if (!mfg || typeof mfg !== 'object') return [];
+
+  return Object.entries(mfg).map(([k, buf]) => {
+    const companyId = Number(k); // keys come as strings
+    return {
+      companyId,
+      length: buf?.length ?? 0,
+      dataHex: Buffer.isBuffer(buf) ? bufToHex(buf) : '',
+      data: buf,
+    };
+  });
+}
+
+/**
+ * Scans for a device and returns its manufacturer data without establishing a GATT connection.
+ */
+export const getDeviceManufacturerData = async function (
+  id: string,
+  timeoutMs = 15000
+) {
+  cancelDbusIdleClose();
+  
+  // Ensure scanning to receive advertisements
+  if (!(await getAdapterStatus())) {
+    await startScan();
+  }
+
+  try {
+    // Wait for the device to appear
+    const device = await getDeviceById(id, timeoutMs);
+
+    log(`Reading GAP data from Device ${id}`);
+    
+    // 3. Get the data
+    const mfg = await device.getManufacturerData();
+    
+    // stop scanning
+    if (await getAdapterStatus()) {
+      await stopScan();
+    }
+
+    // 5. Trigger idle timer
+    touchConnection(id); 
+
+    return parseManufacturerData(mfg);
+
+  } catch (error) {
+    // On error, ensure we stop scanning so the process can eventually exit
+    try {
+      if (await getAdapterStatus()) await stopScan();
+    } catch { /* ignore */ }
+    
+    touchConnection(id);
+    throw error;
   }
 };
 

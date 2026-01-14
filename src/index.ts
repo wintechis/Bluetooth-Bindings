@@ -1,10 +1,10 @@
-import BluetoothClientFactory from './Bluetooth-client-factory';
-import {enableAutoDisconnect, disableAutoDisconnect} from './Bluetooth-client';
-import {close} from './bluetooth/Bluetooth_lib';
+import { BluetoothGATTClientFactory, BluetoothGapClientFactory } from './Bluetooth-client-factory';
+import { enableAutoDisconnect, disableAutoDisconnect } from './Bluetooth-gatt-client';
+import { close } from './bluetooth/Bluetooth_lib';
 
-export default BluetoothClientFactory;
 export {
-  BluetoothClientFactory,
+  BluetoothGATTClientFactory,
+  BluetoothGapClientFactory, 
   enableAutoDisconnect,
   disableAutoDisconnect,
   close,

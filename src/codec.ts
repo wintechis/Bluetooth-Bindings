@@ -84,7 +84,6 @@ export class BLEBinaryCodec implements ContentCodec {
     parameters?: {[key: string]: string}
   ): Buffer {
     log('Writing Value:', dataValue);
-
     let buf: any;
     let hexString: string;
     //console.log(schema);

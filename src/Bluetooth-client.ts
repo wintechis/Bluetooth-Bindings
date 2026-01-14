@@ -1,7 +1,7 @@
-import {Content, ProtocolClient, ProtocolHelpers} from '@node-wot/core';
-import {Subscription} from 'rxjs/Subscription';
-import type {Form, SecurityScheme} from 'wot-thing-description-types';
-import {Readable} from 'stream';
+import { Content, ProtocolClient, ProtocolHelpers } from '@node-wot/core';
+import { Subscription } from 'rxjs/Subscription';
+import type { Form, SecurityScheme } from 'wot-thing-description-types';
+import { Readable } from 'stream';
 import debug from 'debug';
 import * as BLELibCore from './bluetooth/Bluetooth_lib';
 
@@ -100,10 +100,11 @@ export default class BluetoothClient implements ProtocolClient {
     const deconstructedForm = deconstructForm(form);
 
     await BLELibCore.connect(deconstructedForm.deviceId);
+    BLELibCore.touchConnection(deconstructedForm.deviceId);
 
     log(
       `invoke read operation on characteristic ${deconstructedForm.characteristicId}` +
-        ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
+      ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
     );
 
     // Get Characteristic
@@ -125,7 +126,8 @@ export default class BluetoothClient implements ProtocolClient {
     }
 
     if (autoDisconnect) {
-      await BLELibCore.close();
+      // disconnect on idle (handled inside BLELibCore timers)
+      BLELibCore.touchConnection(deconstructedForm.deviceId);
     }
 
     // Return proper Content (with toBuffer)
@@ -141,6 +143,7 @@ export default class BluetoothClient implements ProtocolClient {
   public async writeResource(form: Form, content?: Content): Promise<void> {
     const deconstructedForm = deconstructForm(form);
     await BLELibCore.connect(deconstructedForm.deviceId);
+    BLELibCore.touchConnection(deconstructedForm.deviceId);
 
     // Convert content -> Buffer
     let buffer: Buffer;
@@ -189,19 +192,19 @@ export default class BluetoothClient implements ProtocolClient {
       case 'sbo:write':
         log(
           `invoke write operation on characteristic ${deconstructedForm.characteristicId}` +
-            ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
+          ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
         // write value with response
-        await characteristic.writeValue(buffer, {offset: 0, type: 'request'});
+        await characteristic.writeValue(buffer, { offset: 0, type: 'request' });
         break;
 
       case 'sbo:write-without-response':
         log(
           `invoke write-without-response operation on characteristic ${deconstructedForm.characteristicId}` +
-            ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
+          ` from service ${deconstructedForm.serviceId} on ${deconstructedForm.deviceId}`
         );
         // write value without response
-        await characteristic.writeValue(buffer, {offset: 0, type: 'command'});
+        await characteristic.writeValue(buffer, { offset: 0, type: 'command' });
         break;
 
       default: {
@@ -212,7 +215,7 @@ export default class BluetoothClient implements ProtocolClient {
     }
 
     if (autoDisconnect) {
-      await BLELibCore.close();
+      BLELibCore.touchConnection(deconstructedForm.deviceId);
     }
   }
 
@@ -233,7 +236,7 @@ export default class BluetoothClient implements ProtocolClient {
 
     log(
       `unsubscribing from characteristic with serviceId ${deconstructedForm.serviceId} characteristicId ` +
-        `${deconstructedForm.characteristicId} on ${deconstructedForm.deviceId}`
+      `${deconstructedForm.characteristicId} on ${deconstructedForm.deviceId}`
     );
 
     const characteristic = await BLELibCore.getCharacteristic(
@@ -255,6 +258,8 @@ export default class BluetoothClient implements ProtocolClient {
     complete?: () => void
   ): Promise<Subscription> {
     const deconstructedForm = deconstructForm(form);
+    await BLELibCore.connect(deconstructedForm.deviceId);
+    BLELibCore.holdConnection(deconstructedForm.deviceId);
 
     if (deconstructedForm.ble_operation !== 'sbo:notify') {
       throw new Error(
@@ -263,7 +268,7 @@ export default class BluetoothClient implements ProtocolClient {
     }
     log(
       `subscribing to characteristic with serviceId ${deconstructedForm.serviceId} ` +
-        `characteristicId ${deconstructedForm.characteristicId}`
+      `characteristicId ${deconstructedForm.characteristicId}`
     );
 
     const characteristic = await BLELibCore.getCharacteristic(
@@ -301,9 +306,11 @@ export default class BluetoothClient implements ProtocolClient {
       void characteristic
         .stopNotifications()
         .then(() => {
+          BLELibCore.releaseConnection(deconstructedForm.deviceId);
           complete?.();
         })
         .catch((e: any) => {
+          BLELibCore.releaseConnection(deconstructedForm.deviceId);
           error?.(e);
         });
     });

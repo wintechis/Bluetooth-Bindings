@@ -2,144 +2,223 @@
  * Handle basic bluetooth communication and discovery.
  */
 
-import {createBluetooth} from 'node-ble';
-import {deconstructForm} from '../Bluetooth-client';
-import debug from 'debug';
+import { createBluetooth } from "node-ble";
+import { deconstructForm } from "../Bluetooth-client";
+import debug from "debug";
 
-// Create a logger with a specific namespace
-const log = debug('binding-Bluetooth');
+const log = debug("binding-Bluetooth");
 
 type BLEPair = ReturnType<typeof createBluetooth>;
 
-let ble: BLEPair = createBluetooth();
-let _bluetooth = ble.bluetooth;
-let _destroy = ble.destroy;
-let _destroyed = false;
+// -------------------------
+// Lazy BLE / DBus lifetime
+// -------------------------
+let ble: BLEPair | null = null;
+let _bluetooth: BLEPair["bluetooth"] | null = null;
+let _destroy: BLEPair["destroy"] | null = null;
+let _destroyed = true;
 
-// re-create the node-ble pair (DBus connection + API)
+function initBleIfNeeded() {
+  if (_destroyed || !ble || !_bluetooth || !_destroy) {
+    ble = createBluetooth();
+    _bluetooth = ble.bluetooth;
+    _destroy = ble.destroy;
+    _destroyed = false;
+    log("BLE initialized");
+  }
+  return _bluetooth!;
+}
+
 export const reinit = () => {
-  ble = createBluetooth();
-  _bluetooth = ble.bluetooth;
-  _destroy = ble.destroy;
-  _destroyed = false;
-  log('BLE reinitialized');
+  _destroyed = true;
+  ble = null;
+  _bluetooth = null;
+  _destroy = null;
+  log("BLE marked for reinit");
 };
 
-// internal helper to ensure connection is alive
-const ensureAlive = () => {
-  if (_destroyed) reinit();
-  return _bluetooth;
+const ensureAlive = () => initBleIfNeeded();
+
+// -------------------------
+// Idle policy (the key part)
+// -------------------------
+// Keep connection open briefly; disconnect on idle; close DBus after everything idle.
+// Tweak defaults as needed.
+let DEVICE_IDLE_DISCONNECT_MS = 3000;
+let DBUS_IDLE_CLOSE_MS = 350;  
+
+export const setDeviceIdleDisconnectMs = (ms: number) => {
+  DEVICE_IDLE_DISCONNECT_MS = Math.max(0, ms | 0);
 };
 
-// object to store connection details
+export const setDbusIdleCloseMs = (ms: number) => {
+  DBUS_IDLE_CLOSE_MS = Math.max(0, ms | 0);
+};
+
+let dbusIdleTimer: NodeJS.Timeout | null = null;
+const deviceIdleTimers = new Map<string, NodeJS.Timeout>();
+const holdCounts = new Map<string, number>(); // for notify subscriptions etc.
+
+function cancelDbusIdleClose() {
+  if (dbusIdleTimer) {
+    clearTimeout(dbusIdleTimer);
+    dbusIdleTimer = null;
+  }
+}
+
+function scheduleDbusIdleClose() {
+  cancelDbusIdleClose();
+  if (DBUS_IDLE_CLOSE_MS <= 0) return;
+
+  dbusIdleTimer = setTimeout(async () => {
+    const anyConnected = Object.keys(connection_established_obj).length > 0;
+
+    let discovering = false;
+    try {
+      discovering = await getAdapterStatus();
+    } catch {
+      // ignore
+    }
+
+    if (!anyConnected && !discovering) {
+      await close().catch(() => {});
+    }
+  }, DBUS_IDLE_CLOSE_MS);
+
+  // Do not keep Node alive only because of timer
+  dbusIdleTimer.unref?.();
+}
+
+function clearDeviceIdleTimer(id: string) {
+  const t = deviceIdleTimers.get(id);
+  if (t) clearTimeout(t);
+  deviceIdleTimers.delete(id);
+}
+
+function isHeld(id: string) {
+  return (holdCounts.get(id) ?? 0) > 0;
+}
+
+// Call this after any successful operation to keep the connection alive briefly
+export function touchConnection(id: string) {
+  cancelDbusIdleClose();
+  if (DEVICE_IDLE_DISCONNECT_MS <= 0) return;
+  if (isHeld(id)) return; // subscriptions hold the connection
+
+  clearDeviceIdleTimer(id);
+
+  const t = setTimeout(() => {
+    void disconnectByMac(id).catch(() => {});
+  }, DEVICE_IDLE_DISCONNECT_MS);
+
+  t.unref?.();
+  deviceIdleTimers.set(id, t);
+}
+
+// For long-lived notify subscriptions: hold/release connection explicitly
+export function holdConnection(id: string) {
+  cancelDbusIdleClose();
+  clearDeviceIdleTimer(id);
+  holdCounts.set(id, (holdCounts.get(id) ?? 0) + 1);
+}
+
+export function releaseConnection(id: string) {
+  const n = (holdCounts.get(id) ?? 0) - 1;
+  if (n <= 0) holdCounts.delete(id);
+  else holdCounts.set(id, n);
+
+  // after releasing, we may disconnect on idle
+  touchConnection(id);
+}
+
+// -------------------------
+// Connection store
+// -------------------------
 export let connection_established_obj: Record<string, any> = {};
 
-/**
- * Returns a the default adapter instance.
- * @returns {Adapter} instance of default adapter.
- */
+// -------------------------
+// Adapter helpers
+// -------------------------
 export const getAdapter = async function () {
   const adapter = await ensureAlive().defaultAdapter();
   return adapter;
 };
 
-/**
- * Starts a scan operation
- */
 export const startScan = async function () {
+  cancelDbusIdleClose();
   const adapter = await getAdapter();
   if (!(await adapter.isDiscovering())) {
     await adapter.startDiscovery();
-    log('Scanning started');
-  } else {
-    log('Scanning already in progress');
+    log("Scanning started");
   }
 };
 
-/**
- * Stops an ongoing scan operation
- */
 export const stopScan = async function () {
   const adapter = await getAdapter();
   if (await adapter.isDiscovering()) {
     await adapter.stopDiscovery();
-    log('Scanning stopped');
-  } else {
-    log('Scanning already stopped');
+    log("Scanning stopped");
   }
 };
 
-/**
- * Gets the current status of the adapter
- * @returns {boolean} indicates if discovery is active.
- */
 export const getAdapterStatus = async function () {
   const adapter = await getAdapter();
   return adapter.isDiscovering();
 };
 
-/**
- * Returns a paired bluetooth device by their id.
- * @param {BluetoothDevice.id} id identifier of the device to get.
- * @returns {BluetoothDevice} the bluetooth device with id.
- */
+// -------------------------
+// Device lookup + connect
+// -------------------------
 export const getDeviceById = async function (id: string, timeoutMs = 15000) {
+  cancelDbusIdleClose();
   const adapter = await getAdapter();
-  // race waitDevice against timeout
+
   return (await Promise.race([
     adapter.waitDevice(id),
     new Promise((_, rej) =>
       setTimeout(
-        () =>
-          rej(
-            new Error(
-              `Bluetooth device ${id} wasn't found within ${timeoutMs}ms`
-            )
-          ),
+        () => rej(new Error(`Bluetooth device ${id} wasn't found within ${timeoutMs}ms`)),
         timeoutMs
       )
     ),
-  ])) as any; // node-ble device
+  ])) as any;
 };
 
-/**
- * Sends a connect command.
- * @param {BluetoothDevice.id} id identifier of the device to connect to.
- * @return {Promise<Object>} representation of the complete request with response.
- */
 export const connect = async function (id: string) {
+  cancelDbusIdleClose();
   try {
     if (id in connection_established_obj) {
+      // refresh idle timer
+      touchConnection(id);
       return connection_established_obj[id][1]; // gattServer
-    } else {
-      // make sure discovery is running while we wait (optional but helpful)
-      const discovering = await getAdapterStatus();
-      if (!discovering) await startScan();
-
-      const device: any = await getDeviceById(id);
-      log(`Connecting to Device ${id}`);
-      await device.connect();
-      const gattServer = await device.gatt();
-
-      // stop scanning once connected
-      if (await getAdapterStatus()) await stopScan();
-
-      connection_established_obj[id] = [device, gattServer];
-      return gattServer;
     }
+
+    const discovering = await getAdapterStatus();
+    if (!discovering) await startScan();
+
+    const device: any = await getDeviceById(id);
+    log(`Connecting to Device ${id}`);
+    await device.connect();
+    const gattServer = await device.gatt();
+
+    // stop scanning once connected
+    if (await getAdapterStatus()) await stopScan();
+
+    connection_established_obj[id] = [device, gattServer];
+
+    // schedule disconnect after idle
+    touchConnection(id);
+
+    return gattServer;
   } catch (error) {
     console.error(error);
     throw new Error(`Error connecting to Bluetooth device ${id}`);
   }
 };
 
-/**
- * Returns a promise to the primary BluetoothRemoteGATTService offered by
- * the bluetooth device for a specified BluetoothServiceUUID.
- * @param {BluetoothDevice.id} id identifier of the device to get the service from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @returns {Promise<BluetoothRemoteGATT>} A BluetoothRemoteGATTService object.
- */
+// -------------------------
+// GATT helpers
+// -------------------------
 const getPrimaryService = async function (id: string, serviceUUID: string) {
   const entry = connection_established_obj[id];
   if (!entry) throw new Error(`Device ${id} is not connected.`);
@@ -150,144 +229,145 @@ const getPrimaryService = async function (id: string, serviceUUID: string) {
     return service;
   } catch (error) {
     console.error(error);
-    throw new Error(
-      `No Services Matching UUID ${serviceUUID} found in Device ${id}.`
-    );
+    throw new Error(`No Services Matching UUID ${serviceUUID} found in Device ${id}.`);
   }
 };
 
-/**
- * Returns a promise to the BluetoothRemoteGATTCharacteristic offered by
- * the bluetooth device for a specified BluetoothServiceUUID and
- * BluetoothCharacteristicUUID.
- * @param {BluetoothDevice.id} id identifier of the device to get the characteristic from.
- * @param {BluetoothServiceUUID} serviceUUID identifier of the service.
- * @param {BluetoothCharacteristicUUID} characteristicUUID identifier of the characteristic.
- * @returns {Promise<BluetoothRemoteGATTCharacteristic>} A BluetoothRemoteGATTCharacteristic object.
- */
 export const getCharacteristic = async function (
   id: string,
   serviceUUID: string,
   characteristicUUID: string
 ) {
+  cancelDbusIdleClose();
   const service: any = await getPrimaryService(id, serviceUUID);
   if (!service) return;
+
   try {
-    const characteristic = await service.getCharacteristic(
-      characteristicUUID.toLowerCase()
-    );
-    log(
-      `Got characteristic ${characteristicUUID} from service ${serviceUUID} of Device ${id}`
-    );
+    const characteristic = await service.getCharacteristic(characteristicUUID.toLowerCase());
+    log(`Got characteristic ${characteristicUUID} from service ${serviceUUID} of Device ${id}`);
+
+    // keep connection alive since we are actively using it
+    touchConnection(id);
+
     return characteristic;
   } catch (error) {
     console.error(error);
-    throw new Error('The device has not the specified characteristic.');
+    throw new Error("The device has not the specified characteristic.");
   }
 };
 
-/**
- * Connects ta a selected device based on a Thing object.
- * @param {object} Thing Thing instance of device.
- */
-export const connectThing = async function (Thing: any) {
-  const mac = extractMac(Thing);
-  await connect(mac);
-};
-
-/**
- * Disconnects from a selected device based on a Thing object.
- * @param {object} Thing Thing instance of device.
- */
-export const disconnectThing = async function (Thing: any) {
-  const mac = extractMac(Thing);
-  await disconnectByMac(mac);
-};
-
-/**
- * Disconnects from a selected device based on a mac address.
- * @param {string} id identifier of the device to read from.
- */
+// -------------------------
+// Disconnects
+// -------------------------
 export const disconnectByMac = async function (id: string) {
+  clearDeviceIdleTimer(id);
+
   const entry = connection_established_obj[id];
   if (entry) {
     const device = entry[0];
-    await device.disconnect();
-    log('Disconnecting from Device:', id);
+    try {
+      await device.disconnect();
+    } catch {
+      // ignore disconnect errors
+    }
     delete connection_established_obj[id];
+    log("Disconnected from Device:", id);
+  }
+
+  // If nothing else is connected, schedule DBus close so scripts can exit.
+  if (Object.keys(connection_established_obj).length === 0) {
+    scheduleDbusIdleClose();
   }
 };
 
-/**
- * Disconnects from all connected devices.
- */
 export const disconnectAll = async function () {
   for (const [key, value] of Object.entries(connection_established_obj)) {
-    log('Disconnecting from Device:', key);
-    await value[0].disconnect();
+    clearDeviceIdleTimer(key);
+    try {
+      await value[0].disconnect();
+    } catch {}
   }
-  for (const key in connection_established_obj) {
-    delete connection_established_obj[key];
-  }
+  connection_established_obj = {};
+
+  scheduleDbusIdleClose();
 };
 
 /**
  * Disconnects from all connected devices and stops all operations by node-ble.
- * Needed to exit programm after execution.
+ * Needed to exit program after execution (we call this automatically when idle).
  */
 export const close = async function () {
-  // stop discovery (ignore errors during teardown)
+  cancelDbusIdleClose();
+
+  for (const t of deviceIdleTimers.values()) clearTimeout(t);
+  deviceIdleTimers.clear();
+  holdCounts.clear();
+
+  // stop discovery
   try {
-    if (await getAdapterStatus()) {
-      await stopScan();
+    if (!_destroyed) {
+      if (await getAdapterStatus()) {
+        await stopScan();
+      }
     }
   } catch (e) {
-    log('stopScan failed (ignoring):', e);
+    log("stopScan failed (ignoring):", e);
   }
 
   await disconnectAll();
 
   // tear down node-ble (closes DBus)
   try {
-    _destroy();
-  } catch (e) {
+    _destroy?.();
+  } catch {
+    // ignore
   } finally {
     _destroyed = true;
-    log('BLE destroyed');
+    ble = null;
+    _bluetooth = null;
+    _destroy = null;
+    log("BLE destroyed");
   }
 };
 
-/**
- * Extract a mac address from a Thing instance.
- * @param {object} Thing Thing instance of device.
- * @returns {string} MAC of device
- */
+// -------------------------
+// Helpers for Thing objects
+// -------------------------
+export const connectThing = async function (Thing: any) {
+  const mac = extractMac(Thing);
+  await connect(mac);
+};
+
+export const disconnectThing = async function (Thing: any) {
+  const mac = extractMac(Thing);
+  await disconnectByMac(mac);
+};
+
 const extractMac = function (Thing: any) {
-  // Get MAC of device
-  let mac: string = '';
-  for (const [key, value] of Object.entries(Thing.properties)) {
-    let element = Thing.properties[`${key}`];
-    let form = element.forms[0];
-    let deconstructedForm = deconstructForm(form);
+  let mac: string = "";
+  for (const [key] of Object.entries(Thing.properties)) {
+    const element = Thing.properties[`${key}`];
+    const form = element.forms[0];
+    const deconstructedForm = deconstructForm(form);
     mac = deconstructedForm.deviceId;
     break;
   }
 
-  if (mac === '') {
-    for (const [key, value] of Object.entries(Thing.actions)) {
-      let element = Thing.actions[`${key}`];
-      let form = element.forms[0];
-      let deconstructedForm = deconstructForm(form);
+  if (mac === "") {
+    for (const [key] of Object.entries(Thing.actions)) {
+      const element = Thing.actions[`${key}`];
+      const form = element.forms[0];
+      const deconstructedForm = deconstructForm(form);
       mac = deconstructedForm.deviceId;
       break;
     }
   }
 
-  if (mac === '') {
-    for (const [key, value] of Object.entries(Thing.events)) {
-      let element = Thing.events[`${key}`];
-      let form = element.forms[0];
-      let deconstructedForm = deconstructForm(form);
+  if (mac === "") {
+    for (const [key] of Object.entries(Thing.events)) {
+      const element = Thing.events[`${key}`];
+      const form = element.forms[0];
+      const deconstructedForm = deconstructForm(form);
       mac = deconstructedForm.deviceId;
       break;
     }

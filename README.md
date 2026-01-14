@@ -12,12 +12,23 @@ npm install wot-ble-client-factory @node-wot/core
 ```
 
 ## Minimal Setup
+
+#### GATT
 ```js
 const { Servient } = require("@node-wot/core");
-const { BluetoothClientFactory } = require("wot-ble-client-factory");
+const { BluetoothGATTClientFactory } = require("wot-ble-client-factory");
 
 const servient = new Servient();
-servient.addClientFactory(new BluetoothClientFactory());
+servient.addClientFactory(new BluetoothGATTClientFactory());
+```
+
+#### GAP
+```js
+const { Servient } = require("@node-wot/core");
+const { BluetoothGapClientFactory } = require("wot-ble-client-factory");
+
+const servient = new Servient();
+servient.addClientFactory(new BluetoothGapClientFactory());
 ```
 
 Check the `examples` folder for more complete Thing Descriptions.
@@ -27,11 +38,9 @@ To enable debug logs run with this command:
 DEBUG=binding-Bluetooth node example.js
 ```
 
-## Protocol specifier
+## Protocol Specifier
 
-The protocol prefix handled by this binding is <code>gatt://</code>.
-
-A planned protocol prefix is <code>gap://</code>.
+The protocol prefix handled by this binding is <code>gatt://</code> and <code>gap://</code>.
 
 ## Getting Started
 If you want to build this package locally:
@@ -40,8 +49,19 @@ git clone git@github.com:wintechis/Bluetooth-Bindings.git
 cd Bluetooth-Bindings
 npm install
 npm run build
-
 ```
+
+For local development you can use yalc:
+```
+npm install -g yalc
+./publish_yalc.sh
+```
+
+If the library code has been updated run: 
+```
+./update_yalc.sh
+```
+
 Then you can run the examples:
 
 ```
@@ -54,7 +74,7 @@ node examples/govee_lamp.js
 In order to align a new protocol into the WoT context, the required abstract WoT operations must first be mapped to the concrete operations of the new protocol.
 A distinction must be made between the two GATT methods write and write-without-response. Both are capable of writing WoT resources, but the two methods differ in that write expects a confirmation message from the server after a write operation, while write-without-response requires no such confirmation. Thus the GATT method chosen depends on the implementation of the attribute in the GATT server.
 
-| WoT Operation  | BLE GATT Method            |
+| WoT Operation  | BLE GATT Method            | 
 | -------------- | -------------------------- |
 | readproperty   | read                       |
 | writeproperty  | write / write-w/o-response |
@@ -69,9 +89,13 @@ It has the following structure:
 ```
 gatt://<MAC>/<service>/<characteristic>
 ```
+or 
+```
+gap://<MAC>
+```
 
 with the following meaning:
-- `gatt` Identification of the transfer protocol
+- `gatt` or `gap` Identification of the transfer protocol
 - `<MAC>` MAC address of the Bluetooth device
 - `<service>` GATT service containing the characteristic
 - `<characteristic>` GATT characteristic to interact with
@@ -85,15 +109,16 @@ For the Bluetooth LE bindings, we chose the new, non-standard subtype `x.binary-
 The Binary Data Ontology (bdo) is intended to provide maximum flexibility and describe all kinds of binary data.
 We want to use the bdo ontology to describe the data transmitted by Bluetooth LE devices, even those that do not comply with the Bluetooth standard. The terms of the vocabulary are in our use case only useful within the properties, actions, or events parts of a Thing Description because they contain information about the data that is needed in the codec associated with application/x.binary-data-stream.
 
-| Vocabulary term | Description                                 | Assignment                      | Type    | Default Value    |
-| --------------- | ------------------------------------------- | ------------------------------- | ------- | ---------------- |
-| bdo:bytelength  | Number of octets in the data                | required                        | integer | None             |
-| bdo:signed      | Indicates if the data is signed             | required                        | boolean | false            |
-| bdo:endianess   | Byte order of the binary data               | required                        | string  | bdo:littleEndian |
-| bdo:scale       | Scale of received integer value             | optional                        | float   | 1.0              |
-| bdo:offset      | Offset in number of octets                  | optional                        | integer | 0                |
-| bdo:pattern     | The byte pattern of the binary data         | optional                        | string  | None             |
-| bdo:variable    | Description of the variables in bdo:pattern | required if bdo:pattern is used | ---     | None             |
+| Vocabulary term | Description                                      | Assignment                      | Type    | Default Value    |
+| --------------- | ------------------------------------------------ | ------------------------------- | ------- | ---------------- |
+| bdo:bytelength  | Number of octets in the data                     | required                        | integer | None             |
+| bdo:signed      | Indicates if the data is signed                  | required                        | boolean | false            |
+| bdo:byteOrder   | Byte order of the binary data                    | required                        | string  | bdo:littleEndian |
+| bdo:scale       | Scale of received integer value (multiplicaiton) | optional                        | float   | 1.0              |
+| bdo:valueAdd    | Scale of received integer value (addition)       | optional                        | float   | 0                |
+| bdo:offset      | Offset in number of octets                       | optional                        | integer | 0                |
+| bdo:pattern     | The byte pattern of the binary data              | optional                        | string  | None             |
+| bdo:variables   | Description of the variables in bdo:pattern      | required if bdo:pattern is used | ---     | None             |
 
 ### Simple Bluetooth Ontology
 The communication and metadata of a Bluetooth Low Energy device is described using the Simple Bluetooth Ontology with preferred prefix sbo. 

@@ -53,7 +53,6 @@ npm run build
 
 For local development you can use yalc:
 ```
-npm install -g yalc
 ./publish_yalc.sh
 ```
 
@@ -62,10 +61,9 @@ If the library code has been updated run:
 ./update_yalc.sh
 ```
 
-Then you can run the examples:
-
+For installation in your project use:
 ```
-node examples/govee_lamp.js
+yalc add wot-ble-client-factory
 ```
 ## Documentation
 

@@ -278,6 +278,17 @@ export function parseManufacturerData(mfg: Record<string, Buffer>) {
   });
 }
 
+// Sleep function
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+// Handle manufactoring data that is not ready yet
+function isNoSuchPropertyManufacturerData(err: any) {
+  const msg = String(err?.text || err?.message || err);
+  return msg.includes("No such property 'ManufacturerData'");
+}
+
 /**
  * Scans for a device and returns its manufacturer data without establishing a GATT connection.
  */
@@ -292,31 +303,40 @@ export const getDeviceManufacturerData = async function (
     await startScan();
   }
 
-  try {
-    // Wait for the device to appear
-    const device = await getDeviceById(id, timeoutMs);
+  const deadline = Date.now() + timeoutMs;
 
+ try {
+    const device: any = await getDeviceById(id, timeoutMs);
     log(`Reading GAP data from Device ${id}`);
-    
-    // 3. Get the data
-    const mfg = await device.getManufacturerData();
-    
-    // stop scanning
+
+    let mfg: Record<string, Buffer> | null = null;
+
+    while (Date.now() < deadline) {
+      try {
+        mfg = await device.getManufacturerData();
+        // Some stacks return {} until first adv is received
+        if (mfg && Object.keys(mfg).length > 0) break;
+      } catch (e: any) {
+        if (!isNoSuchPropertyManufacturerData(e)) throw e;
+        // property not available yet -> keep trying
+      }
+      await sleep(200);
+    }
+
+    if (!mfg || Object.keys(mfg).length === 0) {
+      throw new Error(`No manufacturer data found on ${id} within ${timeoutMs}ms`);
+    }
+
     if (await getAdapterStatus()) {
       await stopScan();
     }
 
-    // 5. Trigger idle timer
-    touchConnection(id); 
-
+    touchConnection(id);
     return parseManufacturerData(mfg);
-
   } catch (error) {
-    // On error, ensure we stop scanning so the process can eventually exit
     try {
       if (await getAdapterStatus()) await stopScan();
-    } catch { /* ignore */ }
-    
+    } catch {}
     touchConnection(id);
     throw error;
   }

@@ -1,7 +1,8 @@
-import {ContentCodec} from '@node-wot/core';
-import {DataSchema, DataSchemaValue} from 'wot-typescript-definitions';
+import { ContentCodec } from '@node-wot/core';
+import { DataSchema, DataSchemaValue } from 'wot-typescript-definitions';
 const UriTemplate = require('uritemplate');
 import debug from 'debug';
+import { buffer } from 'stream/consumers';
 
 // Create a logger with a specific namespace
 const log = debug('binding-Bluetooth');
@@ -15,73 +16,44 @@ export class BLEBinaryCodec implements ContentCodec {
   bytesToValue(
     bytes: Buffer,
     schema: DataSchema,
-    parameters?: {[key: string]: string}
+    parameters?: { [key: string]: string }
   ): DataSchemaValue {
-    let parsed;
-    let name_list;
-    let value_list;
-    let global_type = schema.type; // Save global type
-    if (typeof schema['bdo:pattern'] != 'undefined') {
-      // Pattern
-      const result_arr = readPattern(schema, bytes);
-      name_list = result_arr[0];
-      value_list = result_arr[1];
-      let decoded_result_arr = [];
-      for (let i = 0; i < name_list.length; i++) {
-        // Get parameter
-        let schema_temp = schema['bdo:variables'][name_list[i]];
 
-        if (schema_temp.type == undefined) {
-          // If no type is annotated use the one annotated at the top
-          schema_temp.type = global_type;
+    if (schema.type == 'object') {
+      const objectKeys = Object.keys(schema.properties);
+
+      const resultObject: any = {};
+
+      // Iterate over all elements in object
+      for (const key of objectKeys) {
+        const localSchema = schema.properties[key];
+
+        if (localSchema.type == 'integer' || localSchema.type == 'number') {
+          const value = bit2Number(localSchema, bytes);
+          resultObject[key] = value;
+
+        } else if (localSchema.type == 'string') {
+          const value = bit2String(localSchema, bytes);
+          resultObject[key] = value;
         }
-
-        const bytes_temp = value_list[i];
-
-        if (schema_temp.type == 'integer') {
-          decoded_result_arr.push(byte2int(schema_temp, bytes_temp));
-        } else if (schema_temp.type == 'string') {
-          decoded_result_arr.push(byte2string(schema_temp, bytes_temp));
-        }
-
-        // Used if scale leads to float number, instead of int
-        else if (schema_temp.type == 'number') {
-          decoded_result_arr.push(byte2int(schema_temp, bytes_temp));
-        } else {
-          throw new Error('Datatype not supported by codec');
-        }
-
-        parsed = decoded_result_arr;
       }
+      return resultObject;
     } else {
-      if (schema.type == 'integer') {
-        parsed = byte2int(schema, bytes);
+      if (schema.type == 'integer' || schema.type == 'number') {
+        return bit2Number(schema, bytes);
       } else if (schema.type == 'string') {
-        parsed = byte2string(schema, bytes);
-      }
-
-      // Used if scale leads to float number, instead of int
-      else if (schema.type == 'number') {
-        parsed = byte2int(schema, bytes);
+        return bit2String(schema, bytes);
       } else {
         throw new Error('Datatype not supported by codec');
       }
     }
-
-    const length = getArrayLength(parsed);
-
-    if (length === 1 && Array.isArray(parsed)) {
-      parsed = parsed[0];
-    }
-
-    return parsed;
   }
 
   // Convert value to bytes
   valueToBytes(
     dataValue: any,
     schema: DataSchema,
-    parameters?: {[key: string]: string}
+    parameters?: { [key: string]: string }
   ): Buffer {
     log('Writing Value:', dataValue);
     let buf: any;
@@ -137,13 +109,45 @@ export class BLEBinaryCodec implements ContentCodec {
   }
 }
 
-function getArrayLength(
-  value: string | number | (string | number)[]
-): number | undefined {
-  if (Array.isArray(value)) {
-    return value.length;
+function bit2Number(schema: DataSchema, bytes: Buffer) {
+  const signed = schema['bdo:signed'] || false;
+  const scale = schema['bdo:scale'] || 1;
+  const valueAdd = schema['bdo:valueAdd'] || 0;
+
+  // Prepare the buffer
+  const newBuffer = sliceBuffer(schema, bytes)
+
+  // Determine how many bytes we need to read
+  const byteLength = newBuffer.length;
+  const bitLength = byteLength * 8;
+
+  let rawValue = 0;
+
+  if (byteLength <= 6) {
+    rawValue = newBuffer.readUIntBE(0, byteLength);
+  } else {
+    // Fallback for 64-bit (reads as BigInt then converts to Number, precision loss possible > 53 bits)
+    rawValue = Number(newBuffer.readBigUInt64BE(0));
   }
-  return undefined;
+
+  // Shift right by (TotalBitsInBytes - ActualBitLength)
+  const shift = (byteLength * 8) - bitLength;
+
+  rawValue = rawValue / Math.pow(2, shift);
+
+  // Handle Signed Integers
+  if (signed) {
+    // Check if the MSB (Sign Bit) is 1
+    const signBitMask = Math.pow(2, bitLength - 1);
+
+    if (rawValue >= signBitMask) {
+      // Calculate negative value: Value - (2^BitLength)
+      rawValue = rawValue - Math.pow(2, bitLength);
+    }
+  }
+
+  // Apply Scaling and Offset
+  return (rawValue * scale) + valueAdd;
 }
 
 /**
@@ -319,6 +323,21 @@ function string2byte(schema: DataSchema, dataValue: string) {
   return buf;
 }
 
+function bit2String(schema: DataSchema, bytes: Buffer) {
+  const bitOffset = schema['bdo:bitOffset'] || 0;
+  const bitLength = schema['bdo:bitLength'];
+
+  const newBuffer = sliceBits(bytes, bitOffset, bitLength);
+
+  let value = "";
+  if (typeof schema.format == 'undefined') {
+    value = newBuffer.toString('utf-8');
+  } else if (schema.format == 'hex') {
+    value = newBuffer.toString('hex');
+  }
+  return value;
+}
+
 // Convert buffer to string
 function byte2string(schema: DataSchema, bytes: Buffer) {
   let value;
@@ -332,4 +351,175 @@ function byte2string(schema: DataSchema, bytes: Buffer) {
 
 function hexToBuffer(hex: string) {
   return Buffer.from(hex, 'hex');
+}
+
+////////////////////////////////////////////
+/**
+ * Slices specific bits from a buffer, handling Endianness correctly.
+ * Returns a new Buffer containing the isolated value, Right-Aligned (LSB).
+ * 
+ * @param buffer - Source buffer
+ * @param bitOffset - Start bit position
+ * @param bitLength - Length of bits to read
+ * @param byteOrder - 'little' or 'big' (default 'big')
+ */
+function sliceBits(buffer: Buffer, bitOffset: number, bitLength: number, byteOrder: 'little' | 'big' = 'big'): Buffer {
+  // 1. Determine the boundaries of the data in bytes
+  const startByte = Math.floor(bitOffset / 8);
+  const endBit = bitOffset + bitLength;
+  const endByte = Math.ceil(endBit / 8);
+
+  // 2. Read the raw bytes into a BigInt to handle shifting across boundaries
+  // We use BigInt to ensure we don't lose precision on 64-bit integers
+  let rawValue = 0n;
+  const bytesToRead = endByte - startByte;
+
+  if (byteOrder === 'little') {
+    // Little Endian: Read bytes from LSB to MSB
+    for (let i = 0; i < bytesToRead; i++) {
+      const idx = startByte + i;
+      if (idx < buffer.length) {
+        rawValue |= BigInt(buffer[idx]) << BigInt(i * 8);
+      }
+    }
+    // Shift away the bits before the offset (LSB side)
+    const localBitOffset = BigInt(bitOffset % 8);
+    rawValue = rawValue >> localBitOffset;
+  } else {
+    // Big Endian: Read bytes from MSB to LSB
+    for (let i = 0; i < bytesToRead; i++) {
+      const idx = startByte + i;
+      if (idx < buffer.length) {
+        rawValue = (rawValue << 8n) | BigInt(buffer[idx]);
+      }
+    }
+    // Align BE: Calculate how many "unused" bits are at the right and shift them off
+    const totalBitsRead = bytesToRead * 8;
+    const bitsToShift = BigInt(totalBitsRead - (bitLength + (bitOffset % 8)));
+    rawValue = rawValue >> bitsToShift;
+  }
+
+  // 3. Mask the value to ensure we only have the requested bitLength
+  const mask = (1n << BigInt(bitLength)) - 1n;
+  rawValue &= mask;
+
+  // 4. Write the result into a new Buffer (Normalized to Big Endian)
+  // We make the new buffer just large enough to hold the bits
+  const resultBytes = Math.ceil(bitLength / 8);
+  const resultBuffer = Buffer.alloc(resultBytes);
+
+  // Write BigInt to Buffer (Big Endian allows standard readUIntBE later)
+  for (let i = 0; i < resultBytes; i++) {
+    // Extract the byte: (Value >> (8 * (Length - 1 - i))) & 0xFF
+    const shift = BigInt((resultBytes - 1 - i) * 8);
+    resultBuffer[i] = Number((rawValue >> shift) & 0xFFn);
+  }
+
+  return resultBuffer;
+}
+
+
+////////////////////////////////////////////////////7
+type BitFragment = {
+  bitOffset: number;
+  bitLength: number;
+  byteOrder?: 'little' | 'big';
+};
+
+function sliceFragmentedBits(buffer: Buffer, fragments: BitFragment[]): Buffer {
+  let combinedValue = 0n;
+  let totalBitLength = 0;
+
+  for (const frag of fragments) {
+    // 1. Read the value of this specific fragment
+    const fragValue = readBitsAsBigInt(
+      buffer,
+      frag.bitOffset,
+      frag.bitLength,
+      frag.byteOrder || 'big'
+    );
+
+    // 2. Shift the existing total to the left to make room for the new fragment
+    combinedValue = (combinedValue << BigInt(frag.bitLength));
+
+    // 3. Merge the new fragment
+    combinedValue = combinedValue | fragValue;
+
+    totalBitLength += frag.bitLength;
+  }
+
+  // 4. Convert the final merged BigInt to a Buffer
+  return bigIntToBuffer(combinedValue, totalBitLength);
+}
+
+function bigIntToBuffer(value: bigint, bitLength: number): Buffer {
+  const byteSize = Math.ceil(bitLength / 8);
+  const buffer = Buffer.alloc(byteSize);
+  for (let i = 0; i < byteSize; i++) {
+    const shift = BigInt((byteSize - 1 - i) * 8);
+    buffer[i] = Number((value >> shift) & 0xFFn);
+  }
+  return buffer;
+}
+
+function readBitsAsBigInt(
+  buffer: Buffer,
+  bitOffset: number,
+  bitLength: number,
+  byteOrder: 'little' | 'big' = 'big'
+): bigint {
+  const startByte = Math.floor(bitOffset / 8);
+  const endByte = Math.ceil((bitOffset + bitLength) / 8);
+  const bytesToRead = endByte - startByte;
+
+  let rawValue = 0n;
+
+  if (byteOrder === 'little') {
+    for (let i = 0; i < bytesToRead; i++) {
+      const idx = startByte + i;
+      if (idx < buffer.length) {
+        rawValue |= BigInt(buffer[idx]) << BigInt(i * 8);
+      }
+    }
+    // Adjust for offset
+    rawValue = rawValue >> BigInt(bitOffset % 8);
+  } else {
+    for (let i = 0; i < bytesToRead; i++) {
+      const idx = startByte + i;
+      if (idx < buffer.length) {
+        rawValue = (rawValue << 8n) | BigInt(buffer[idx]);
+      }
+    }
+    // Adjust for offset
+    const totalBitsRead = bytesToRead * 8;
+    const bitsToShift = BigInt(totalBitsRead - (bitLength + (bitOffset % 8)));
+    rawValue = rawValue >> bitsToShift;
+  }
+
+  // Mask
+  const mask = (1n << BigInt(bitLength)) - 1n;
+  return rawValue & mask;
+}
+
+
+// Function to decide which sliceing method to use.
+function sliceBuffer(schema: any, bytes: Buffer) {
+  const byteOrder = schema['bdo:byteOrder'] || 'little';
+
+  // Handle multiple entries
+  if (Array.isArray(schema["bdo:bitOffset"])) {
+    const args = [];
+    for (let i = 0; i < schema["bdo:bitOffset"].length; i++) {
+      args.push({ "bitOffset": schema["bdo:bitOffset"][i], "bitLength": schema["bdo:bitLength"][i], "byteOrder": byteOrder})
+    }
+    const newBuffer = sliceFragmentedBits(bytes, args);
+    return newBuffer;
+
+  }
+  // Handle single entries
+  const bitLength = schema['bdo:bitLength'];
+  const bitOffset = schema['bdo:bitOffset'] || 0;
+
+  const newBuffer = sliceBits(bytes, bitOffset, bitLength, byteOrder);
+  return newBuffer;
 }

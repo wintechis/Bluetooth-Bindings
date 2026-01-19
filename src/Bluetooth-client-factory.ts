@@ -10,7 +10,7 @@ import debug from 'debug';
 
 const log = debug('binding-Bluetooth');
 
-export class BluetoothGATTClientFactory implements ProtocolClientFactory {
+export class BluetoothGattClientFactory implements ProtocolClientFactory {
   public readonly scheme: string = 'gatt';
 
   constructor() {

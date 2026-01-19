@@ -39,12 +39,11 @@ export const reinit = () => {
 
 const ensureAlive = () => initBleIfNeeded();
 
-// -------------------------
-// Idle policy (the key part)
-// -------------------------
+// ------------
+// Idle policy 
+// ------------
 // Keep connection open briefly; disconnect on idle; close DBus after everything idle.
-// Tweak defaults as needed.
-let DEVICE_IDLE_DISCONNECT_MS = 2500;
+let DEVICE_IDLE_DISCONNECT_MS = 2000;
 let DBUS_IDLE_CLOSE_MS = 350;  
 
 export const setDeviceIdleDisconnectMs = (ms: number) => {
@@ -73,14 +72,7 @@ function scheduleDbusIdleClose() {
   dbusIdleTimer = setTimeout(async () => {
     const anyConnected = Object.keys(connection_established_obj).length > 0;
 
-    let discovering = false;
-    try {
-      discovering = await getAdapterStatus();
-    } catch {
-      // ignore
-    }
-
-    if (!anyConnected && !discovering) {
+    if (!anyConnected) {
       await close().catch(() => {});
     }
   }, DBUS_IDLE_CLOSE_MS);
@@ -155,9 +147,22 @@ export const startScan = async function () {
 
 export const stopScan = async function () {
   const adapter = await getAdapter();
+  // Check if we think we are discovering
   if (await adapter.isDiscovering()) {
-    await adapter.stopDiscovery();
-    log("Scanning stopped");
+    try {
+      await adapter.stopDiscovery();
+      log("Scanning stopped");
+    } catch (error: any) {
+      // If BlueZ says "No discovery started", it means it stopped automatically
+      // We can safely ignore this.
+      const errorMsg = error.text || error.message || "";
+      if (errorMsg.includes("No discovery started")) {
+        log("Scanning was already stopped (BlueZ implicit)");
+      } else {
+        // Real error, re-throw it
+        throw error;
+      }
+    }
   }
 };
 

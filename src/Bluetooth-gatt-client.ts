@@ -116,14 +116,71 @@ export default class BluetoothClient implements ProtocolClient {
 
     // Read Value
     let buffer: Buffer;
-    try {
-      buffer = await characteristic.readValue();
-    } catch (error) {
-      console.error(error);
-      throw new Error(
-        `Error reading from Bluetooth device ${deconstructedForm.characteristicId}`
-      );
+
+    const method = form["sbo:methodName"];
+
+    if (method == "sbo:notify") {
+      const timeOut = 60000
+      buffer = await new Promise<Buffer>(async (resolve, reject) => {
+        // Safety mechanism: reject if no notification arrives within timeOut seconds
+        const timeoutId = setTimeout(async () => {
+          cleanup();
+          reject(new Error(`Timeout: No notification received from ${deconstructedForm.characteristicId} within ${timeOut/1000}s`));
+        }, timeOut);
+
+        // Define the Event Handler
+        const onValueChange = async (data: Buffer) => {
+          // We only need the first value, so clean up immediately
+          await cleanup();
+          resolve(data);
+        };
+
+        // Remove listener and stop notifications to mimic a "single read"
+        const cleanup = async () => {
+          clearTimeout(timeoutId);
+          characteristic.removeListener('valuechanged', onValueChange);
+          try {
+            await characteristic.stopNotifications();
+          } catch (e) {
+            console.warn("Warning: Failed to stop notifications cleanly", e);
+          }
+        };
+
+        // Setup & Start
+        try {
+          // Listen for the event from node-ble
+          characteristic.on('valuechanged', onValueChange);
+          await characteristic.startNotifications();
+        }
+        catch (error: unknown) {
+          clearTimeout(timeoutId);
+          characteristic.removeListener('valuechanged', onValueChange);
+
+          // Default message
+          let errorMessage = "Unknown error occurred";
+
+          // Narrow the type to safely access .message
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          }
+
+          reject(new Error(`Failed to subscribe to notifications: ${errorMessage}`));
+        }
+      });
+
+    } else {
+      try {
+        buffer = await characteristic.readValue();
+      } catch (error) {
+        console.error(error);
+        throw new Error(
+          `Error reading from Bluetooth device ${deconstructedForm.characteristicId}`
+        );
+      }
     }
+
 
     if (autoDisconnect) {
       // disconnect on idle (handled inside BLELibCore timers)

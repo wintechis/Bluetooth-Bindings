@@ -63,6 +63,7 @@ If the library code has been updated run:
 
 For installation in your project use:
 ```
+npm install
 yalc add wot-ble-client-factory
 ```
 ## Documentation
